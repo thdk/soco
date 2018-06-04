@@ -9,6 +9,9 @@ html, body {
     margin: 0;
     background-color: $color-background;
     padding-bottom: 4em;
+
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    -webkit-tap-highlight-color: transparent;
   }
 
   hr {
