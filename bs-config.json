@@ -3,5 +3,6 @@
   "server": {
     "baseDir": "./dist/"
   },
-  "browser": ["chrome"]
+  "browser": ["chrome"],
+  "ghostMode": false
 }

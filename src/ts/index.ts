@@ -12,22 +12,24 @@ const firebaseApp = firebase.initializeApp({
 });
 
 // Initialize Cloud Firestore through Firebase
-const db = firebase.firestore();
+const db = firebaseApp.firestore();
 const settings = { timestampsInSnapshots: true };
 db.settings(settings);
+
+const dbIdeasRef = db.collection("ideas");
 
 window.onload = function (e) {
     const ideaGrid = document.getElementById("idea-grid");
     if (!ideaGrid)
         return;
 
-    db.collection("ideas").onSnapshot(querySnapshot => {
+        dbIdeasRef.onSnapshot(querySnapshot => {
         const items = querySnapshot.docChanges().map(i =>  createIdeaItem(i.doc.data() as IIdea));
         salvattore.prependElements(ideaGrid, items);
     });
 
-    const headerNewIdeaButton = this.document.getElementById('headerNewIdeaBtn');
-    const addNewIdeaPanel = this.document.getElementById('newidea');
+    const headerNewIdeaButton = document.getElementById('headerNewIdeaBtn');
+    const addNewIdeaPanel = document.getElementById('newidea');
 
     if (headerNewIdeaButton)
         headerNewIdeaButton.addEventListener("click", e => {
@@ -45,13 +47,19 @@ window.onload = function (e) {
                     title: titleEl.value,
                     description: descriptionEl.value
                 };
+                
                 submitIdea(newIdea);
             });
-    }
+    }    
 }
 
 function submitIdea(idea: IIdea) {
-    db.collection("ideas").add(idea);
+    dbIdeasRef.add(idea).then(docRef => {
+        console.log("Document written with ID: ", docRef.id);
+    })
+    .catch(function(error) {
+        console.error("Error adding document: ", error);
+    });
 }
 
 function createIdeaItem(idea: IIdea): HTMLElement {
