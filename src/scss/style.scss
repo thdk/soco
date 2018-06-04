@@ -64,12 +64,17 @@ html, body {
   a::-moz-focus-inner {
     border: 0;
   }
+
   .vote-button {
     position: relative;
     width: 5.5rem;
     height: 5.5rem;
     margin: 1rem;
     border-radius: 50%;
+
+    &:hover {
+      cursor: pointer;
+    }
 
     span {
         position: absolute;
@@ -125,7 +130,7 @@ html, body {
     transition: all 1s linear;
   }
   .bg-plus.active {
-    background-color: #def186;
+    background-color: $color-accent;
   }
   .bg-minus.active {
     background-color: #515676;
@@ -143,7 +148,8 @@ html, body {
     animation-delay: 0.3s;
   }
   .vote-button:hover .bg {
-    background-color: rgba(255, 255, 255, 0.3)
+    background-color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
   }
 
   @keyframes push {

@@ -29,7 +29,7 @@ window.onload = function (e) {
     });
 
     const headerNewIdeaButton = document.getElementById('headerNewIdeaBtn');
-    const addNewIdeaPanel = document.getElementById('newidea');
+    const addNewIdeaPanel = document.getElementById('newidea');  
 
     if (headerNewIdeaButton)
         headerNewIdeaButton.addEventListener("click", e => {
@@ -47,7 +47,7 @@ window.onload = function (e) {
                     title: titleEl.value,
                     description: descriptionEl.value
                 };
-                
+
                 submitIdea(newIdea);
             });
     }    
@@ -73,14 +73,22 @@ function createIdeaItem(idea: IIdea): HTMLElement {
                 <span class="symbol symbol-plus"></span>
                 </a>
             </div>
-            <div class="vote-button minus">
+            <!--<div class="vote-button minus">
                 <span class="bg bg-minus"></span>
                 <span class="symbol symbol-minus"></span>
                 </a>
-            </div>
+            </div>-->
         </div>
     `;
 
     article.innerHTML = articleContent;
+    (article.querySelector(".vote-button") as HTMLElement).onclick = voteButtonClickEvent;
     return article;
+}
+
+function voteButtonClickEvent(e:MouseEvent) {
+    const button = e.currentTarget;
+    if (!button || !(button instanceof Element)) return;
+
+    button.querySelector(".bg")!.classList.toggle("active");
 }
