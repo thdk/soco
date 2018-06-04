@@ -3,28 +3,53 @@ import { config } from '../../config';
 import { IIdea } from './interfaces/IIdea'
 
 import * as firebase from 'firebase/app';
-import 'firebase/firestore'
+import 'firebase/firestore';
+import 'firebase/storage';
+
+let imageMapTemp: string[] = [];
+let imageMap = [
+    "bbq",
+    "bikerepair",
+    "brokenbike",
+    "buren",
+    "cat",
+    "communicatie",
+    "drink",
+    "games",
+    "herfstbladeren",
+    "kubb",
+    "speeltuin",
+    "renovatie",
+    "tuinieren",
+    "yoga"
+];
 
 const firebaseApp = firebase.initializeApp({
     apiKey: config.firebase.apiKey,
     authDomain: config.firebase.authDomain,
-    projectId: config.firebase.projectId
+    projectId: config.firebase.projectId,
+    storageBucket: config.firebase.storageBucket
 });
 
 // Initialize Cloud Firestore through Firebase
 const db = firebaseApp.firestore();
+const storage = firebaseApp.storage();
+const storageRef = storage.ref();
+
 const settings = { timestampsInSnapshots: true };
 db.settings(settings);
 
 const dbIdeasRef = db.collection("ideas");
+
+const pagesize = 10;
 
 window.onload = function (e) {
     const ideaGridEl = document.getElementById("idea-grid");
     if (!ideaGridEl)
         return;
 
-    db.collection("ideas").limit(5).onSnapshot(querySnapshot => {
-        const items = querySnapshot.docChanges().map(i => createIdeaItem(i.doc.data() as IIdea));
+    db.collection("ideas").limit(pagesize).get().then(querySnapshot => {
+        const items = querySnapshot.docs.map(doc => createIdeaItem(doc.data() as IIdea));
         salvattore.prependElements(ideaGridEl, items);
     });
 
@@ -32,13 +57,13 @@ window.onload = function (e) {
         const target = e.target as HTMLElement;
         const buttonEl = target.closest('.vote-button');
         if (buttonEl) {
-            if (buttonEl.classList.contains("plus"))
-                alert("plus clicked");
-            else if (buttonEl.classList.contains("minus"))
-                alert("minus clicked");
+            //if (buttonEl.classList.contains("plus"))
+                // alert("plus clicked");
+           // else if (buttonEl.classList.contains("minus"))
+                // alert("minus clicked");
 
             buttonEl.querySelector(".bg")!.classList.toggle("active");
-        }    
+        }
     };
 
     const headerNewIdeaButton = document.getElementById('headerNewIdeaBtn');
@@ -61,25 +86,40 @@ window.onload = function (e) {
                     description: descriptionEl.value
                 };
 
-                submitIdea(newIdea);
+                submitIdeaAsync(newIdea).then(idea => {
+                    const itemEl = createIdeaItem(newIdea);
+                    salvattore.prependElements(ideaGridEl, [itemEl]);
+                    const itembounds = itemEl.getBoundingClientRect();
+                    console.log(itembounds);
+                    window.scrollTo(0, itembounds.top + window.scrollY);
+                });
             });
     }
 }
 
-function submitIdea(idea: IIdea) {
-    db.collection("ideas").add(idea).then(docRef => {
-        console.log("Document written with ID: ", docRef.id);
-    })
+function submitIdeaAsync(idea: IIdea): Promise<IIdea> {
+    return new Promise((resolve, reject) => {
+        db.collection("ideas").add(idea).then(docRef => {
+            resolve(idea);
+        })
         .catch(function (error) {
-            console.error("Error adding document: ", error);
+            console.error("Error adding idea: ", error);
+            reject(error);
         });
+    });
 }
 
 function createIdeaItem(idea: IIdea): HTMLElement {
     const article = document.createElement('article');
     const articleContent = `
-        <h2>${idea.title}</h2>
-        <p>${idea.description}</p>
+    <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+        <div class="mdl-card__title">
+            <h2 class="mdl-card__title-text">${idea.title}</h2>
+        </div>
+        <div class="mdl-card__supporting-text">
+            ${idea.description}
+        </div>
+        <div class="mdl-card__actions mdl-card--border">
         <div class="vote-buttons-wrapper">
             <div class="vote-button plus">
                 <span class="bg bg-plus"></span>
@@ -92,13 +132,31 @@ function createIdeaItem(idea: IIdea): HTMLElement {
                 </a>
             </div>
         </div>
+        </div>
+        <div class="mdl-card__menu">
+            <button class="mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect">
+                <i class="material-icons">share</i>
+            </button>
+        </div>
+    </div>
     `;
 
     article.innerHTML = articleContent;
-    // (article.querySelector(".vote-button") as HTMLElement).onclick = voteButtonClickEvent;
+    const image = null;
+    if (imageMap.length  == 0) {
+        imageMap = imageMapTemp.slice();
+        imageMapTemp = [];
+    }
+
+    imageMapTemp.push(imageMap.pop()!);
+
+    storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL().then(imageUrl => {
+        const titleEl = (article.querySelector('.mdl-card__title') as HTMLElement);
+        titleEl.classList.add("hasImage");
+        titleEl.style.backgroundImage = 'url(' + imageUrl + ')';
+    });
+
     return article;
-
-
 }
 
 function voteButtonClickEvent(e: MouseEvent) {

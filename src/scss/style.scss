@@ -46,11 +46,38 @@ html, body {
   }
 
 #idea-grid {
-    .column { float: left;
+    .column {
+
+      float: left;
+      padding-top: 1em;
+
       &.size-1of3 { width: 33.333%; }
       &.size-1of1 { width: 100%; }
       &.size-1of2 { width: 50%; }
       &.size-1of3 { width: 33.333%; }
+
+      &:first-child {
+        article {
+          margin-left: 2em;
+        }
+      }
+
+      article {
+        margin-right: 2em;
+        margin-bottom: 2em;
+
+        .mdl-card {
+          width: 100%;
+
+          .mdl-card__title {
+            &.hasImage {
+              height: 206px;
+              background-position: center;
+              color: whitesmoke;
+            }
+          }
+        }
+      }
     }
 
 }
