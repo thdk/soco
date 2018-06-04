@@ -1,3 +1,7 @@
 export interface IConfig {
-    apiKey: string;
+    firebase: {
+        apiKey: string,
+        authDomain: string,
+        projectId: string
+    }
 }

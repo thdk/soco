@@ -1,0 +1,68 @@
+header {
+  section {
+    position: absolute;
+    width: 100%;
+    bottom: 63px;
+  }
+  .scroll a {
+    margin-left: auto;
+    display: block;
+    margin-right: auto;
+    text-align: center;
+    bottom: 0;
+    margin-bottom: -100%;
+    position: relative;
+    z-index: 2;
+    -webkit-transform: translate(0, -50%);
+    transform: translate(0, -50%);
+    color: #000;
+    letter-spacing: .1em;
+    text-decoration: none;
+    transition: opacity .3s;
+  }
+  .scroll a:hover {
+    opacity: .5;
+  }
+
+  .scroll a span {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    border-left: 1px solid #000;
+    border-bottom: 1px solid #000;
+    -webkit-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+    -webkit-animation: scrolling-arrow 2s infinite;
+    animation: scrolling-arrow 2s infinite;
+    box-sizing: border-box;
+  }
+  @-webkit-keyframes scrolling-arrow {
+    0% {
+      -webkit-transform: rotate(-45deg) translate(0, 0);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      -webkit-transform: rotate(-45deg) translate(-20px, 20px);
+      opacity: 0;
+    }
+  }
+  @keyframes sdb05 {
+    0% {
+      transform: rotate(-45deg) translate(0, 0);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: rotate(-45deg) translate(-20px, 20px);
+      opacity: 0;
+    }
+  }
+}

@@ -1,0 +1,96 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+
+  <title>SOCO</title>
+  <meta name="description" content="SOCO: The social community">
+  <meta name="author" content="thdk">
+
+  <!-- MDL -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <!-- <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.amber-blue.min.css" /> -->
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+  <!-- END MDL -->
+
+  <!-- <link rel="stylesheet" href="css/styles.css?v=1.0"> -->
+
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+</head>
+
+<body>
+  <script src="bundle.js"></script>
+  <header>
+    <div class="center-wrapper">
+      <div id="page-title"></div>
+      <div class="image-wrapper">
+        <div class="img" style="background-image:url(./images/header-mailbox-v2.png);"></div>
+      </div>
+      <button id="headerNewIdeaBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
+        Post uw idee
+      </button>
+
+    </div>
+    <section class="scroll">
+      <a href="#">
+        <span></span>
+      </a>
+    </section>
+  </header>
+  <hr/>
+  <main>
+    <section>
+      <span id="idea-grid" data-columns>
+
+      </span>
+      <div class="clear"></div>
+    </section>
+    <hr/>
+    <section id="newidea">
+      <div class="mdl-grid">
+        <div class="mdl-layout-spacer"></div>
+        <div class="mdl-cell mdl-cell--4-col">
+          <h2>Post een nieuw idee</h2>
+          <form action="#">
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+              <input class="title mdl-textfield__input" type="text" id="sample3">
+              <label class="mdl-textfield__label" for="sample3">Titel...</label>
+            </div>
+
+            <div class="mdl-textfield mdl-js-textfield">
+              <textarea class="description mdl-textfield__input" type="text" rows="3" id="sample5"></textarea>
+              <label class="mdl-textfield__label" for="sample5">Beschrijving...</label>
+            </div>
+
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+              <input class="mdl-textfield__input" type="text" pattern="-?[0-9]*(\.[0-9]+)?" id="sample4">
+              <label class="mdl-textfield__label" for="sample4">Deelnemers...</label>
+              <span class="mdl-textfield__error">Input is not a number!</span>
+            </div>
+
+            <button id="submitNewIdea" class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent">
+              Post uw idee
+            </button>
+          </form>
+        </div>
+        <div class="mdl-layout-spacer"></div>
+      </div>
+    </section>
+  </main>
+  <hr/>
+  <footer>
+    <p>2018</p>
+    <i class="material-icons">
+      copyright
+    </i>
+    <p>thdk</p>
+  </footer>
+  <script type="text/javascript" src="./ext/salvattore.min.js"></script>
+</body>
+
+</html>
