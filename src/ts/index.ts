@@ -58,9 +58,9 @@ window.onload = function (e) {
         const buttonEl = target.closest('.vote-button');
         if (buttonEl) {
             //if (buttonEl.classList.contains("plus"))
-                // alert("plus clicked");
-           // else if (buttonEl.classList.contains("minus"))
-                // alert("minus clicked");
+            // alert("plus clicked");
+            // else if (buttonEl.classList.contains("minus"))
+            // alert("minus clicked");
 
             buttonEl.querySelector(".bg")!.classList.toggle("active");
         }
@@ -75,11 +75,14 @@ window.onload = function (e) {
         });
 
     if (addNewIdeaPanel) {
-        const submitNewIdeaBtn = addNewIdeaPanel.querySelector('#submitNewIdea');
+        const submitNewIdeaBtnEl = addNewIdeaPanel.querySelector('#submitNewIdea');
+        const noIdeaBtnEl = addNewIdeaPanel.querySelector('#noIdeaBtn');
+
         const titleEl = addNewIdeaPanel.querySelector('input.title') as HTMLInputElement;
         const descriptionEl = addNewIdeaPanel.querySelector('textarea.description') as HTMLTextAreaElement;
-        if (submitNewIdeaBtn)
-            submitNewIdeaBtn.addEventListener("click", e => {
+
+        if (submitNewIdeaBtnEl) {
+            submitNewIdeaBtnEl.addEventListener("click", e => {
                 e.preventDefault();
                 const newIdea = {
                     title: titleEl.value,
@@ -89,11 +92,38 @@ window.onload = function (e) {
                 submitIdeaAsync(newIdea).then(idea => {
                     const itemEl = createIdeaItem(newIdea);
                     salvattore.prependElements(ideaGridEl, [itemEl]);
-                    const itembounds = itemEl.getBoundingClientRect();
-                    console.log(itembounds);
+                    const itembounds = itemEl.closest('section')!.getBoundingClientRect();
                     window.scrollTo(0, itembounds.top + window.scrollY);
+                    updateInputValue(titleEl);
+                    updateInputValue(descriptionEl);
                 });
             });
+        }
+
+        if (noIdeaBtnEl) {
+            noIdeaBtnEl.addEventListener("click", e => {
+                fetch('https://baconipsum.com/api/?type=all-meat-and-filler&paras=1&start-with-lorem=0&format=json&sentences=2')
+                    .then(response => {
+                        response.json().then(v => {
+                            updateInputValue(descriptionEl, v);
+                            updateInputValue(titleEl, v[0].split(' ').slice(0, 2).join(' '));
+                        });
+                    })
+                    .then(function (myJson) {
+                        console.log(myJson);
+                    });
+            });
+        }
+    }
+}
+
+function updateInputValue(element: HTMLInputElement | HTMLTextAreaElement, text?: string) {
+    element.value = text ? text : '';
+    element.closest("div")!.classList.toggle("is-dirty", !!text);
+
+    if (element instanceof HTMLTextAreaElement) {
+        element.style.height = "1px";
+        element.style.height = (25 + element.scrollHeight) + "px";
     }
 }
 
@@ -102,10 +132,10 @@ function submitIdeaAsync(idea: IIdea): Promise<IIdea> {
         db.collection("ideas").add(idea).then(docRef => {
             resolve(idea);
         })
-        .catch(function (error) {
-            console.error("Error adding idea: ", error);
-            reject(error);
-        });
+            .catch(function (error) {
+                console.error("Error adding idea: ", error);
+                reject(error);
+            });
     });
 }
 
@@ -143,7 +173,7 @@ function createIdeaItem(idea: IIdea): HTMLElement {
 
     article.innerHTML = articleContent;
     const image = null;
-    if (imageMap.length  == 0) {
+    if (imageMap.length == 0) {
         imageMap = imageMapTemp.slice();
         imageMapTemp = [];
     }
