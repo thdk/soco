@@ -14,6 +14,10 @@ html, body {
     -webkit-tap-highlight-color: transparent;
   }
 
+  body {
+    overflow: hidden;
+  }
+
   hr {
     color: $color-divider;
   }
@@ -28,14 +32,21 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: $color-background !important;
 
-    div.center-wrapper {
+    .text-align-center {
+      bottom: 45vh;
+      position: absolute;
+    }
+
+    div {
         margin-top:-10vh;
 
         .img {
-            height: 165px;
-            background-position: center;
-            width: 365px;
+          width: 432px;
+          height: 249px;
+          background-repeat: no-repeat;
+          background-position-x: center;
         }
         button, .img {
             margin-left: auto;
