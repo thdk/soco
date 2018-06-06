@@ -1,6 +1,7 @@
+/// <reference path="../../node_modules/@types/material-design-lite/index.d.ts"/>
 import { config } from '../../config';
 
-import { IIdea } from './interfaces/IIdea'
+import { IIdea, IPeristedIdea } from './interfaces/IIdea'
 
 import * as firebase from 'firebase/app';
 import 'firebase/firestore';
@@ -43,13 +44,15 @@ const dbIdeasRef = db.collection("ideas");
 
 const pagesize = 10;
 
+let ideaGridEl: HTMLElement;
+
 window.onload = function (e) {
-    const ideaGridEl = document.getElementById("idea-grid");
+    ideaGridEl = document.getElementById("idea-grid") as HTMLElement;
     if (!ideaGridEl)
         return;
 
-    db.collection("ideas").limit(pagesize).get().then(querySnapshot => {
-        const items = querySnapshot.docs.map(doc => createIdeaItem(doc.data() as IIdea));
+    db.collection("ideas").where("deleted", '==', false).limit(pagesize).get().then(querySnapshot => {
+        const items = querySnapshot.docs.map(doc => createIdeaItem({ ...doc.data(), id: doc.id } as IPeristedIdea));
         salvattore.prependElements(ideaGridEl, items);
     });
 
@@ -63,6 +66,11 @@ window.onload = function (e) {
             // alert("minus clicked");
 
             buttonEl.querySelector(".bg")!.classList.toggle("active");
+        }
+
+        const deleteButtonEl = target.closest(".delete-icon");
+        if (deleteButtonEl){
+            deleteIdeaAsync(deleteButtonEl.closest('.mdl-card')!.attributes.getNamedItem('data-id')!.value);
         }
     };
 
@@ -90,10 +98,8 @@ window.onload = function (e) {
                 };
 
                 submitIdeaAsync(newIdea).then(idea => {
-                    const itemEl = createIdeaItem(newIdea);
+                    const itemEl = createIdeaItem(idea);
                     salvattore.prependElements(ideaGridEl, [itemEl]);
-                    const itembounds = itemEl.closest('section')!.getBoundingClientRect();
-                    window.scrollTo(0, itembounds.top + window.scrollY);
                     updateInputValue(titleEl);
                     updateInputValue(descriptionEl);
                 });
@@ -127,10 +133,15 @@ function updateInputValue(element: HTMLInputElement | HTMLTextAreaElement, text?
     }
 }
 
-function submitIdeaAsync(idea: IIdea): Promise<IIdea> {
+function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
     return new Promise((resolve, reject) => {
-        db.collection("ideas").add(idea).then(docRef => {
-            resolve(idea);
+        const ref = dbIdeasRef.doc();
+        const persistedIdea = { ...idea, id: ref.id, deleted: false };
+        ref.set(persistedIdea).then(docRef => {
+
+            showSnackbarMessageAsync("Bedankt voor uw idee.", "Ongedaan maken")
+                .then(() => deleteIdeaAsync(persistedIdea.id));
+            resolve(persistedIdea);
         })
             .catch(function (error) {
                 console.error("Error adding idea: ", error);
@@ -139,10 +150,37 @@ function submitIdeaAsync(idea: IIdea): Promise<IIdea> {
     });
 }
 
-function createIdeaItem(idea: IIdea): HTMLElement {
+function deleteIdeaAsync(id: string): Promise<void> {
+    return db.collection("ideas").doc(id).update({ deleted: true })
+        .then(() => {
+            showSnackbarMessageAsync("Uw idee werd verwijderd.");
+            ideaGridEl!.querySelector('.mdl-card[data-code=' + id + ']')!.remove();
+        })
+}
+
+function showSnackbarMessageAsync(message: string, action?: string) {
+    return new Promise((resolve, reject) => {
+        // show snackbar
+        const snackbarContainer = document.querySelector('#snackbar');
+        if (snackbarContainer) {
+            const data = {
+                message: 'Bedankt voor uw idee.',
+                timeout: 6000,
+                actionHandler: () => {
+                    resolve();
+                },
+                actionText: action ? action : ''
+            };
+            (snackbarContainer as any).MaterialSnackbar.showSnackbar(data);
+        }
+    })
+
+}
+
+function createIdeaItem(idea: IPeristedIdea): HTMLElement {
     const article = document.createElement('article');
     const articleContent = `
-    <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+    <div class="demo-card-wide mdl-card mdl-shadow--2dp" data-id="${idea.id}">
         <div class="mdl-card__title">
             <h2 class="mdl-card__title-text">${idea.title}</h2>
         </div>
@@ -164,8 +202,8 @@ function createIdeaItem(idea: IIdea): HTMLElement {
         </div>
         </div>
         <div class="mdl-card__menu">
-            <button class="mdl-button mdl-button--icon mdl-js-button mdl-js-ripple-effect">
-                <i style="display:none;" class="material-icons">share</i>
+            <button class="mdl-button delete-icon mdl-button--icon mdl-js-button mdl-js-ripple-effect">
+                <i class="material-icons">share</i>
             </button>
         </div>
     </div>
