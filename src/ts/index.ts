@@ -154,7 +154,7 @@ function deleteIdeaAsync(id: string): Promise<void> {
     return db.collection("ideas").doc(id).update({ deleted: true })
         .then(() => {
             showSnackbarMessageAsync("Uw idee werd verwijderd.");
-            ideaGridEl!.querySelector('.mdl-card[data-code=' + id + ']')!.remove();
+            ideaGridEl!.querySelector('.mdl-card[data-id=' + id + ']')!.remove();
         })
 }
 
