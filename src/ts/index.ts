@@ -110,6 +110,7 @@ window.onload = function (e) {
         headerNavigationLoginButton.addEventListener("click", e => {
             e.preventDefault();
             ideasPanel.close(undefined);
+            newIdeaPanel.close(undefined);
             loginPanel.openAsync().then(user => {
                 ideasPanel.openAsync();
                 handleLoggedIn(user);
