@@ -1,8 +1,9 @@
 @import 'colors';
-@import '../../node_modules/material-design-lite/src/material-design-lite';
+// @import '../../node_modules/material-design-lite/src/material-design-lite';
 
 @import "scrolldown";
 @import "shorthands";
+@import "panels";
 
 html, body {
     height: 100%;
@@ -23,9 +24,15 @@ html, body {
   }
 
   footer {
-    display: flex;
-    justify-content: center;
+    position: absolute;
+    bottom: 0;
     margin-top: 3em;
+    margin-bottom: 1em;
+    width: 100%;
+  }
+
+  .panel-open header {
+    height: initial;
   }
 
   header {
@@ -34,6 +41,10 @@ html, body {
     align-items: center;
     justify-content: center;
     background-color: $color-background !important;
+
+    .logout {
+      display: none !important;
+    }
 
     .text-align-center {
       bottom: 45vh;
@@ -45,9 +56,10 @@ html, body {
 
         .img {
           width: 432px;
-          height: 249px;
+          height: 175px;
           background-repeat: no-repeat;
           background-position-x: center;
+          background-position-y: center;
         }
         button, .img {
             margin-left: auto;
@@ -55,6 +67,29 @@ html, body {
             display: block;
         }
     }
+  }
+
+  .logged-in {
+      header
+      {
+        .login {
+          display: none;
+        }
+
+        .logout {
+          display: block !important;
+        }
+      }
+  }
+
+  .panel-open {
+    #banner {
+      display: none;
+    }
+  }
+
+  section.panel {
+    margin-bottom: 3em;
   }
 
 #idea-grid {

@@ -1,11 +1,15 @@
-/// <reference path="../../node_modules/@types/material-design-lite/index.d.ts"/>
 import { config } from '../../config';
 
-import { IIdea, IPeristedIdea } from './interfaces/IIdea'
-
 import * as firebase from 'firebase/app';
+import 'firebaseui';
+import 'firebase/auth';
 import 'firebase/firestore';
 import 'firebase/storage';
+
+import utils from './framework/utils'
+import { IIdea, IPeristedIdea } from './interfaces/IIdea'
+import IPanel from './interfaces/IPanel';
+import { Panel, LoginPanel, SubmitIdeaPanel } from './framework/panel';
 
 let imageMapTemp: string[] = [];
 let imageMap = [
@@ -33,8 +37,8 @@ const firebaseApp = firebase.initializeApp({
 });
 
 // Initialize Cloud Firestore through Firebase
-const db = firebaseApp.firestore();
-const storage = firebaseApp.storage();
+const db = firebase.firestore();
+const storage = firebase.storage();
 const storageRef = storage.ref();
 
 const settings = { timestampsInSnapshots: true };
@@ -44,7 +48,14 @@ const dbIdeasRef = db.collection("ideas");
 
 const pagesize = 10;
 
+let ideasPanel: IPanel<void>;
+let newIdeaPanel: SubmitIdeaPanel;
+let loginPanel: IPanel<firebase.User | null>;
 let ideaGridEl: HTMLElement;
+
+let snackbarContainer: HTMLElement | null;
+
+declare const firebaseui: any;
 
 window.onload = function (e) {
     ideaGridEl = document.getElementById("idea-grid") as HTMLElement;
@@ -55,6 +66,15 @@ window.onload = function (e) {
         const items = querySnapshot.docs.map(doc => createIdeaItem({ ...doc.data(), id: doc.id } as IPeristedIdea));
         salvattore.prependElements(ideaGridEl, items);
     });
+
+    ideasPanel = new Panel<void>(document.getElementById("ideas") as HTMLElement, false);
+    ideasPanel.openAsync();
+
+    newIdeaPanel = new SubmitIdeaPanel(document.getElementById("newidea") as HTMLElement, firebaseApp);
+
+    loginPanel = new LoginPanel(document.getElementById("authentication") as HTMLElement, new firebaseui.auth.AuthUI(firebase.auth()), firebaseApp);
+
+    snackbarContainer = document.querySelector('#snackbar');
 
     ideaGridEl.onclick = (e) => {
         const target = e.target as HTMLElement;
@@ -69,39 +89,75 @@ window.onload = function (e) {
         }
 
         const deleteButtonEl = target.closest(".delete-icon");
-        if (deleteButtonEl){
+        if (deleteButtonEl) {
             deleteIdeaAsync(deleteButtonEl.closest('.mdl-card')!.attributes.getNamedItem('data-id')!.value);
         }
     };
 
-    const headerNewIdeaButton = document.getElementById('headerNewIdeaBtn');
-    const addNewIdeaPanel = document.getElementById('newidea');
+    const headerNavigationLogoutButton = document.querySelector("header .mdl-navigation .logout");
+    if (headerNavigationLogoutButton) {
+        headerNavigationLogoutButton.addEventListener("click", e => {
+            e.preventDefault();
+            firebase.auth().signOut().then(() => {
+                document.body.classList.remove("logged-in");
+                showSnackbarMessage(`Tot ziens!`);
+            });
+        });
+    }
 
+    const headerNavigationLoginButton = document.querySelector("header .mdl-navigation .login");
+    if (headerNavigationLoginButton) {
+        headerNavigationLoginButton.addEventListener("click", e => {
+            e.preventDefault();
+            ideasPanel.close(undefined);
+            loginPanel.openAsync().then(user => {
+                ideasPanel.openAsync();
+                handleLoggedIn(user);
+            })
+        });
+    }
+
+    const headerNewIdeaButton = document.getElementById('headerNewIdeaBtn');
     if (headerNewIdeaButton)
         headerNewIdeaButton.addEventListener("click", e => {
-            window.location.href = "#newidea";
+            ideasPanel.close(undefined);
+            newIdeaPanel.openAsync().then(newIdea => {
+                ideasPanel.openAsync();
+            });
         });
 
+    const addNewIdeaPanel = document.getElementById('newidea');
     if (addNewIdeaPanel) {
         const submitNewIdeaBtnEl = addNewIdeaPanel.querySelector('#submitNewIdea');
+        const cancelNewIdeaBtn = addNewIdeaPanel.querySelector("#cancelNewIdeaBtn");
         const noIdeaBtnEl = addNewIdeaPanel.querySelector('#noIdeaBtn');
 
         const titleEl = addNewIdeaPanel.querySelector('input.title') as HTMLInputElement;
+        const authorEl = addNewIdeaPanel.querySelector('input.author') as HTMLInputElement;
         const descriptionEl = addNewIdeaPanel.querySelector('textarea.description') as HTMLTextAreaElement;
+
+        if (cancelNewIdeaBtn) {
+            cancelNewIdeaBtn.addEventListener("click", e => {
+                newIdeaPanel.close(undefined);
+            });
+        }
 
         if (submitNewIdeaBtnEl) {
             submitNewIdeaBtnEl.addEventListener("click", e => {
+
                 e.preventDefault();
                 const newIdea = {
                     title: titleEl.value,
-                    description: descriptionEl.value
+                    description: descriptionEl.value,
+                    author: authorEl.value
                 };
 
                 submitIdeaAsync(newIdea).then(idea => {
+                    newIdeaPanel.close(newIdea);
                     const itemEl = createIdeaItem(idea);
                     salvattore.prependElements(ideaGridEl, [itemEl]);
-                    updateInputValue(titleEl);
-                    updateInputValue(descriptionEl);
+                    utils.updateInputValue(titleEl);
+                    utils.updateInputValue(descriptionEl);
                 });
             });
         }
@@ -111,8 +167,8 @@ window.onload = function (e) {
                 fetch('https://baconipsum.com/api/?type=all-meat-and-filler&paras=1&start-with-lorem=0&format=json&sentences=2')
                     .then(response => {
                         response.json().then(v => {
-                            updateInputValue(descriptionEl, v);
-                            updateInputValue(titleEl, v[0].split(' ').slice(0, 2).join(' '));
+                            utils.updateInputValue(descriptionEl, v);
+                            utils.updateInputValue(titleEl, v[0].split(' ').slice(0, 2).join(' '));
                         });
                     })
                     .then(function (myJson) {
@@ -121,16 +177,11 @@ window.onload = function (e) {
             });
         }
     }
-}
 
-function updateInputValue(element: HTMLInputElement | HTMLTextAreaElement, text?: string) {
-    element.value = text ? text : '';
-    element.closest("div")!.classList.toggle("is-dirty", !!text);
-
-    if (element instanceof HTMLTextAreaElement) {
-        element.style.height = "1px";
-        element.style.height = (25 + element.scrollHeight) + "px";
-    }
+    const unsubscribeOnAuthChanged = firebaseApp.auth().onAuthStateChanged((user: firebase.User | null) => {
+        unsubscribeOnAuthChanged();
+        handleLoggedIn(user);
+    });
 }
 
 function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
@@ -153,28 +204,36 @@ function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
 function deleteIdeaAsync(id: string): Promise<void> {
     return db.collection("ideas").doc(id).update({ deleted: true })
         .then(() => {
-            showSnackbarMessageAsync("Uw idee werd verwijderd.");
-            ideaGridEl!.querySelector('.mdl-card[data-id=' + id + ']')!.remove();
+            showSnackbarMessage("Uw idee werd verwijderd.");
+            ideaGridEl!.querySelector('.mdl-card[data-id=' + id + ']')!.parentElement!.remove();
+            salvattore.recreateColumns(ideaGridEl);
         })
 }
 
-function showSnackbarMessageAsync(message: string, action?: string) {
+function showSnackbarMessageAsync(message: string, action: string) {
     return new Promise((resolve, reject) => {
         // show snackbar
-        const snackbarContainer = document.querySelector('#snackbar');
+
         if (snackbarContainer) {
             const data = {
-                message: 'Bedankt voor uw idee.',
-                timeout: 6000,
-                actionHandler: () => {
-                    resolve();
-                },
-                actionText: action ? action : ''
+                message: message,
+                timeout: 4000,
+                actionHandler: resolve,
+                actionText: action
             };
             (snackbarContainer as any).MaterialSnackbar.showSnackbar(data);
         }
     })
+}
 
+function showSnackbarMessage(message: string) {
+    if (snackbarContainer) {
+        const data = {
+            message: message,
+            timeout: 4000,
+        };
+        (snackbarContainer as any).MaterialSnackbar.showSnackbar(data);
+    }
 }
 
 function createIdeaItem(idea: IPeristedIdea): HTMLElement {
@@ -185,7 +244,9 @@ function createIdeaItem(idea: IPeristedIdea): HTMLElement {
             <h2 class="mdl-card__title-text">${idea.title}</h2>
         </div>
         <div class="mdl-card__supporting-text">
-            ${idea.description}
+            <p>${idea.description}</p>
+
+            ${createAuthorTemplate(idea)}
         </div>
         <div class="mdl-card__actions mdl-card--border">
         <div class="vote-buttons-wrapper">
@@ -203,7 +264,7 @@ function createIdeaItem(idea: IPeristedIdea): HTMLElement {
         </div>
         <div class="mdl-card__menu">
             <button class="mdl-button delete-icon mdl-button--icon mdl-js-button mdl-js-ripple-effect">
-                <i class="material-icons">share</i>
+                <i class="material-icons">clear</i>
             </button>
         </div>
     </div>
@@ -227,9 +288,23 @@ function createIdeaItem(idea: IPeristedIdea): HTMLElement {
     return article;
 }
 
+function createAuthorTemplate(idea: IIdea) {
+    if (idea.author)
+        return `<p>Door: ${idea.author}</p>`;
+    else
+        return "";
+}
+
 function voteButtonClickEvent(e: MouseEvent) {
     const button = e.currentTarget;
     if (!button || !(button instanceof Element)) return;
 
     button.querySelector(".bg")!.classList.toggle("active");
+}
+
+function handleLoggedIn(user: firebase.User | null) {
+    if (user) {
+        showSnackbarMessage(`Welkom: ${user.displayName}`);
+        document.body.classList.add("logged-in");
+    }
 }

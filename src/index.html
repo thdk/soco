@@ -12,9 +12,14 @@
 
   <!-- MDL -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <!-- <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.amber-blue.min.css" /> -->
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.amber-blue.min.css" />
   <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
   <!-- END MDL -->
+
+<!-- Firebase UI -->
+  <!-- <script src="https://cdn.firebase.com/libs/firebaseui/3.0.0/firebaseui.js"></script> -->
+	<link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.0.0/firebaseui.css" />
+  <!-- END Firebase UI -->
 
   <!-- <link rel="stylesheet" href="css/styles.css?v=1.0"> -->
 
@@ -25,6 +30,7 @@
 
 <body>
   <script src="bundle.js"></script>
+
   <div class="demo-layout-transparent mdl-layout mdl-js-layout">
     <header class="mdl-layout__header mdl-layout__header--scroll">
       <div class="mdl-layout__header-row">
@@ -34,10 +40,11 @@
         <div class="mdl-layout-spacer"></div>
         <!-- Navigation -->
         <nav class="mdl-navigation">
-          <a class="mdl-navigation__link" href="">Link</a>
+          <a class="mdl-navigation__link login" href="">Login</a>
+          <a class="mdl-navigation__link logout" href="">Logout</a>
         </nav>
       </div>
-      <div class="mdl-layout__header-row flex-center">
+      <div class="mdl-layout__header-row flex-center" id="banner">
           <div class="text-align-center">
             <div class="img" style="background-image:url(./images/header-mailbox-v2.png);"></div>
 
@@ -50,38 +57,40 @@
             <span></span>
           </a>
         </section>
+        </div>
     </header>
     <div class="mdl-layout__drawer">
-      <span class="mdl-layout-title">Title</span>
+      <span class="mdl-layout-title">Limbastraat</span>
       <nav class="mdl-navigation">
-        <a class="mdl-navigation__link" href="">Link</a>
-        <a class="mdl-navigation__link" href="">Link</a>
-        <a class="mdl-navigation__link" href="">Link</a>
-        <a class="mdl-navigation__link" href="">Link</a>
+        <a class="mdl-navigation__link" href="">Ideeënbus</a>
       </nav>
     </div>
     <main class="mdl-layout__content">
-        <section>
+        <section class="panel" id="ideas">
             <span id="idea-grid" data-columns>
 
             </span>
             <div class="clear"></div>
           </section>
-          <hr/>
-          <section id="newidea">
+          <section class="panel" id="newidea">
             <div class="mdl-grid">
               <div class="mdl-layout-spacer"></div>
-              <div class="mdl-cell mdl-cell--4-col">
+              <div class="mdl-cell mdl-cell--4-col text-align-center">
                 <h2>Post een nieuw idee</h2>
                 <form action="#">
                   <div class="mdl-textfield mdl-js-textfield">
+                      <input class="author mdl-textfield__input" type="text" id="newideaauthor">
+                      <label class="mdl-textfield__label" for="newideaauthor">Uw naam</label>
+                    </div>
+
+                  <div class="mdl-textfield mdl-js-textfield">
                     <input class="title mdl-textfield__input" type="text" id="sample3">
-                    <label class="mdl-textfield__label" for="sample3">Titel...</label>
+                    <label class="mdl-textfield__label" for="sample3">Titel</label>
                   </div>
 
                   <div class="mdl-textfield mdl-js-textfield">
                     <textarea class="description mdl-textfield__input" type="text" rows="3" id="sample5"></textarea>
-                    <label class="mdl-textfield__label" for="sample5">Beschrijving...</label>
+                    <label class="mdl-textfield__label" for="sample5">Beschrijving</label>
                   </div>
 
                   <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
@@ -99,13 +108,27 @@
               </div>
               <div class="mdl-layout-spacer"></div>
             </div>
+            <div class="mdl-grid">
+                <div class="mdl-layout-spacer"></div>
+                <div class="mdl-cell mdl-cell--4-col text-align-center">
+                  <button id="cancelNewIdeaBtn" class="mdl-button mdl-js-button mdl-js-ripple-effect">
+                   Annuleren
+                  </button>
+                </div>
+                <div class="mdl-layout-spacer"></div>
+              </div>
+          </section>
+          <section class="panel" id="authentication">
+              <div id="firebaseui-auth-container"></div>
           </section>
           <footer>
-              <p>2018</p>
+            <div class="flex-center">
+              <span>2018</span>
               <i class="material-icons">
                 copyright
               </i>
-              <p>thdk</p>
+              <span>thdk</span>
+            </div>
             </footer>
     </main>
   </div>
@@ -114,6 +137,7 @@
     <button class="mdl-snackbar__action mdl-color-text--blue-500" type="button"></button>
   </div>
   <script type="text/javascript" src="./ext/salvattore.min.js"></script>
+
 </body>
 
 </html>
