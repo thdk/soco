@@ -30,7 +30,6 @@ export class Panel<T> implements IPanel<T>{
     }
 
     public close(value: T) {
-
         this.containerEl.classList.remove("active");
 
         if (this.addBodyClass) {
@@ -105,9 +104,17 @@ export class LoginPanel extends Panel<any> {
 export class SubmitIdeaPanel extends Panel<IIdea | undefined> {
     private readonly firebaseApp: any;
 
+    private readonly titleEl: HTMLInputElement;
+    private readonly authorEl: HTMLInputElement;
+    private readonly descriptionEl: HTMLTextAreaElement;
+
     constructor(containerEl: HTMLElement, firebaseApp: firebase.app.App) {
         super(containerEl);
         this.firebaseApp = firebaseApp;
+
+        this.titleEl = this.containerEl.querySelector('input.title') as HTMLInputElement;
+        this.authorEl = this.containerEl.querySelector('input.author') as HTMLInputElement;
+        this.descriptionEl = this.containerEl.querySelector('textarea.description') as HTMLTextAreaElement;
     }
 
     public openAsync():Promise<IIdea | undefined> {
@@ -121,5 +128,11 @@ export class SubmitIdeaPanel extends Panel<IIdea | undefined> {
                 resolve();
             });
         }).then(() => super.openAsync());
+    }
+
+    public close(value: IIdea | undefined) {
+        utils.updateInputValue(this.titleEl);
+        utils.updateInputValue(this.descriptionEl);
+        super.close(value);
     }
 }

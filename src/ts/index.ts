@@ -57,15 +57,31 @@ let snackbarContainer: HTMLElement | null;
 
 declare const firebaseui: any;
 
+const ideaIs: string[] = [];
+
 window.onload = function (e) {
     ideaGridEl = document.getElementById("idea-grid") as HTMLElement;
     if (!ideaGridEl)
         return;
 
-    db.collection("ideas").where("deleted", '==', false).limit(pagesize).get().then(querySnapshot => {
-        const items = querySnapshot.docs.map(doc => createIdeaItem({ ...doc.data(), id: doc.id } as IPeristedIdea));
-        salvattore.prependElements(ideaGridEl, items);
-    });
+    // db.collection("ideas").where("deleted", '==', false).limit(pagesize).get().then(querySnapshot => {
+    //     const items = querySnapshot.docs.map(doc => createIdeaItem({ ...doc.data(), id: doc.id } as IPeristedIdea));
+    //     salvattore.prependElements(ideaGridEl, items);
+    // });
+    db.collection("ideas")
+        .where("deleted", '==', false)
+        .orderBy("created", "desc")
+        .limit(pagesize).onSnapshot(querySnapshot => {
+            const ideaEls = querySnapshot.docChanges()
+                .filter(c => ideaIs.findIndex(id => id === c.doc.id) == -1)
+                .map(change => {
+                    console.log(change);
+                    const idea = { ...change.doc.data()} as IPeristedIdea;
+                    ideaIs.push(idea.id);
+                    return createIdeaItem(idea);
+                });
+            salvattore.prependElements(ideaGridEl, ideaEls);
+        });
 
     ideasPanel = new Panel<void>(document.getElementById("ideas") as HTMLElement, false);
     ideasPanel.openAsync();
@@ -110,7 +126,6 @@ window.onload = function (e) {
         headerNavigationLoginButton.addEventListener("click", e => {
             e.preventDefault();
             ideasPanel.close(undefined);
-            newIdeaPanel.close(undefined);
             loginPanel.openAsync().then(user => {
                 ideasPanel.openAsync();
                 handleLoggedIn(user);
@@ -118,14 +133,15 @@ window.onload = function (e) {
         });
     }
 
-    const headerNewIdeaButton = document.getElementById('headerNewIdeaBtn');
-    if (headerNewIdeaButton)
-        headerNewIdeaButton.addEventListener("click", e => {
+    const newIdeaButtons = document.querySelectorAll('button.new-idea');
+    for (let i = 0; i < newIdeaButtons.length; i++) {
+        newIdeaButtons[i].addEventListener("click", e => {
             ideasPanel.close(undefined);
             newIdeaPanel.openAsync().then(newIdea => {
                 ideasPanel.openAsync();
             });
         });
+    }
 
     const addNewIdeaPanel = document.getElementById('newidea');
     if (addNewIdeaPanel) {
@@ -153,12 +169,9 @@ window.onload = function (e) {
                     author: authorEl.value
                 };
 
+                newIdeaPanel.close(newIdea);
                 submitIdeaAsync(newIdea).then(idea => {
-                    newIdeaPanel.close(newIdea);
-                    const itemEl = createIdeaItem(idea);
-                    salvattore.prependElements(ideaGridEl, [itemEl]);
-                    utils.updateInputValue(titleEl);
-                    utils.updateInputValue(descriptionEl);
+                    // TODO: add error handling with retry
                 });
             });
         }
@@ -188,7 +201,13 @@ window.onload = function (e) {
 function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
     return new Promise((resolve, reject) => {
         const ref = dbIdeasRef.doc();
-        const persistedIdea = { ...idea, id: ref.id, deleted: false };
+        const persistedIdea = {
+            ...idea,
+            id: ref.id,
+            deleted: false,
+            created: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
         ref.set(persistedIdea).then(docRef => {
 
             showSnackbarMessageAsync("Bedankt voor uw idee.", "Ongedaan maken")
@@ -249,19 +268,7 @@ function createIdeaItem(idea: IPeristedIdea): HTMLElement {
 
             ${createAuthorTemplate(idea)}
         </div>
-        <div class="mdl-card__actions mdl-card--border">
-        <div class="vote-buttons-wrapper">
-            <div class="vote-button plus">
-                <span class="bg bg-plus"></span>
-                <span class="symbol symbol-plus"></span>
-                </a>
-            </div>
-            <div class="vote-button minus">
-                <span class="bg bg-minus"></span>
-                <span class="symbol symbol-minus"></span>
-                </a>
-            </div>
-        </div>
+        ${createCardActions(idea)}
         </div>
         <div class="mdl-card__menu">
             <button class="mdl-button delete-icon mdl-button--icon mdl-js-button mdl-js-ripple-effect">
@@ -294,6 +301,13 @@ function createAuthorTemplate(idea: IIdea) {
         return `<p>Door: ${idea.author}</p>`;
     else
         return "";
+}
+
+function createCardActions(idea: IIdea) {
+    return `<div class="mdl-card__actions mdl-card--border">
+        <div class="vote-buttons-wrapper">
+            <i class="material-icons">favorite_border</i>
+        </div>`;
 }
 
 function voteButtonClickEvent(e: MouseEvent) {

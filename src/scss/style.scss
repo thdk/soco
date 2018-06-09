@@ -24,8 +24,6 @@ html, body {
   }
 
   footer {
-    position: absolute;
-    bottom: 0;
     margin-top: 3em;
     margin-bottom: 1em;
     width: 100%;
@@ -83,8 +81,27 @@ html, body {
   }
 
   .panel-open {
-    #banner {
+    #banner, #banner-mobile {
       display: none;
+    }
+
+    header {
+      .login, .logout {
+        display: none;
+      }
+    }
+  }
+
+  #banner-mobile {
+    div {
+      height: 250px;
+    }
+    .img {
+      background-size: 300px;
+      background-position: center;
+      background-repeat: no-repeat;
+      width: 400px;
+      height: 117px;
     }
   }
 
@@ -255,4 +272,10 @@ html, body {
 	#idea-grid[data-columns]::before {
 		content: '3 .column.size-1of3';
 	}
+}
+
+@media only screen and (min-width: 1025px) {
+  #banner-mobile {
+    display: none;
+  }
 }

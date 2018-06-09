@@ -12,6 +12,10 @@
     align-items: center;
 }
 
+.flex-column {
+    flex-direction: column;
+}
+
 .relative {
     position: relative;
 }
