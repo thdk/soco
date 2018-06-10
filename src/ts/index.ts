@@ -64,23 +64,38 @@ window.onload = function (e) {
     if (!ideaGridEl)
         return;
 
-    // db.collection("ideas").where("deleted", '==', false).limit(pagesize).get().then(querySnapshot => {
-    //     const items = querySnapshot.docs.map(doc => createIdeaItem({ ...doc.data(), id: doc.id } as IPeristedIdea));
-    //     salvattore.prependElements(ideaGridEl, items);
-    // });
     db.collection("ideas")
         .where("deleted", '==', false)
         .orderBy("created", "desc")
         .limit(pagesize).onSnapshot(querySnapshot => {
-            const ideaEls = querySnapshot.docChanges()
-                .filter(c => ideaIs.findIndex(id => id === c.doc.id) == -1)
-                .map(change => {
-                    console.log(change);
-                    const idea = { ...change.doc.data()} as IPeristedIdea;
+            const newIdeaEls: (HTMLElement | undefined)[] = [];
+            const changes = querySnapshot.docChanges();
+            console.log(changes);
+            for (let i = 0; i < changes.length; i++) {
+                const c = changes[i];
+                console.log(c);
+                const isAlreadyInDom = ideaIs.findIndex(id => id === c.doc.id) != -1;
+                this.console.log(isAlreadyInDom);
+
+                const idea = { ...c.doc.data() } as IPeristedIdea;
+                if (!isAlreadyInDom) {
                     ideaIs.push(idea.id);
-                    return createIdeaItem(idea);
-                });
-            salvattore.prependElements(ideaGridEl, ideaEls);
+                    newIdeaEls.push(createIdeaItem(idea));
+                }
+                else {
+                    // TODO: write better dom update
+                    // TODO: only update dom if the state has changed
+                    const oldDomEl = ideaGridEl.querySelector('.mdl-card[data-id=' + idea.id + ']');
+                    if (oldDomEl) {
+                        oldDomEl.querySelector(".action-count")!.textContent = (idea.votes ? idea.votes : 1).toString();
+                        //oldDomEl.parentNode!.replaceChild(createIdeaItem(idea), oldDomEl!);
+                    }
+                    else {
+                        throw "The element does not exist";
+                    }
+                }
+            }
+            salvattore.prependElements(ideaGridEl, newIdeaEls);
         });
 
     ideasPanel = new Panel<void>(document.getElementById("ideas") as HTMLElement, false);
@@ -108,6 +123,15 @@ window.onload = function (e) {
         if (deleteButtonEl) {
             deleteIdeaAsync(deleteButtonEl.closest('.mdl-card')!.attributes.getNamedItem('data-id')!.value);
         }
+
+        const likeButtonEl = target.closest(".like-action");
+        if (likeButtonEl) {
+            canVoteOnIdeaAsync()
+                .then(() => voteOnIdeaAsync(likeButtonEl.closest('.mdl-card')!.attributes.getNamedItem('data-id')!.value, firebaseApp.auth().currentUser!.uid)
+                    , () => {
+                        showSnackbarMessage("U moet ingelogd zijn om te kunnen stemmen.");
+                    });
+        };
     };
 
     const headerNavigationLogoutButton = document.querySelector("header .mdl-navigation .logout");
@@ -166,7 +190,8 @@ window.onload = function (e) {
                 const newIdea = {
                     title: titleEl.value,
                     description: descriptionEl.value,
-                    author: authorEl.value
+                    author: authorEl.value,
+                    votes: 1
                 };
 
                 newIdeaPanel.close(newIdea);
@@ -176,6 +201,7 @@ window.onload = function (e) {
             });
         }
 
+        // code to generate dummy text to make my test life easier
         if (noIdeaBtnEl) {
             noIdeaBtnEl.addEventListener("click", e => {
                 fetch('https://baconipsum.com/api/?type=all-meat-and-filler&paras=1&start-with-lorem=0&format=json&sentences=2')
@@ -184,9 +210,6 @@ window.onload = function (e) {
                             utils.updateInputValue(descriptionEl, v);
                             utils.updateInputValue(titleEl, v[0].split(' ').slice(0, 2).join(' '));
                         });
-                    })
-                    .then(function (myJson) {
-                        console.log(myJson);
                     });
             });
         }
@@ -222,12 +245,42 @@ function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
 }
 
 function deleteIdeaAsync(id: string): Promise<void> {
-    return db.collection("ideas").doc(id).update({ deleted: true })
+    return dbIdeasRef.doc(id).update({ deleted: true })
         .then(() => {
+            // TODO: move out UI stuff
             showSnackbarMessage("Uw idee werd verwijderd.");
             ideaGridEl!.querySelector('.mdl-card[data-id=' + id + ']')!.parentElement!.remove();
             salvattore.recreateColumns(ideaGridEl);
         })
+}
+
+function canVoteOnIdeaAsync(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        const u = firebaseApp.auth().onAuthStateChanged((user: firebase.User | null) => {
+            u(); // unsubscribe the auth changed listener
+            if (user) resolve();
+            else reject();
+        })
+    });
+}
+
+function voteOnIdeaAsync(id: string, uid: string): Promise<void> {
+    const ideaRef = dbIdeasRef.doc(id);
+    return db.runTransaction(transaction => {
+        // This code may get re-run multiple times if there are conflicts.
+        return transaction.get(ideaRef).then(doc => {
+            if (!doc.exists) {
+                throw "Document does not exist!";
+            }
+
+            const newVoteCount = (doc.data()! as IPeristedIdea).votes + 1;
+            transaction.update(ideaRef, { votes: newVoteCount });
+        });
+    }).then(function () {
+        console.log("Transaction successfully committed!");
+    }).catch(function (error) {
+        console.log("Transaction failed: ", error);
+    });
 }
 
 function showSnackbarMessageAsync(message: string, action: string) {
@@ -305,8 +358,9 @@ function createAuthorTemplate(idea: IIdea) {
 
 function createCardActions(idea: IIdea) {
     return `<div class="mdl-card__actions mdl-card--border">
-        <div class="vote-buttons-wrapper">
-            <i class="material-icons">favorite_border</i>
+        <div class="action-wrapper">
+            <span class="action-count">${idea.votes ? idea.votes : 1}</span>
+            <i class="like-action material-icons">favorite_border</i>
         </div>`;
 }
 

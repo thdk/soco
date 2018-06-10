@@ -4,6 +4,7 @@ export interface IIdea {
     title: string;
     description: string;
     author: string;
+    votes: number;
 }
 
 export interface IPeristedIdea extends IIdea {

@@ -19,6 +19,13 @@ html, body {
     overflow: hidden;
   }
 
+  a {
+    text-decoration: none;
+  }
+  a::-moz-focus-inner {
+    border: 0;
+  }
+
   hr {
     color: $color-divider;
   }
@@ -140,24 +147,35 @@ html, body {
               color: whitesmoke;
             }
           }
+
+          .mdl-card__actions {
+            display: flex;
+            justify-content: flex-end;
+
+            .action-wrapper {
+              &:hover {
+                color: red;
+                cursor: pointer;
+
+                .like-action {
+                  content: 'favorite';
+                }
+              }
+              .like-action {
+                content: 'favorite_border';
+              }
+            }
+          }
         }
       }
     }
 
 }
-  .vote-buttons-wrapper {
+  .action-wrapper {
     display: flex;
-    justify-content: center;
     align-items: center;
-    align-content: center;
-    flex-wrap: wrap;
   }
-  a {
-    text-decoration: none;
-  }
-  a::-moz-focus-inner {
-    border: 0;
-  }
+
 
   .vote-button {
     position: relative;
