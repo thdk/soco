@@ -11,6 +11,14 @@ import { IIdea, IPeristedIdea } from './interfaces/IIdea'
 import IPanel from './interfaces/IPanel';
 import { Panel, LoginPanel, SubmitIdeaPanel } from './framework/panel';
 
+import { IdeaCard, IdeaCardGrid } from './components/IdeaCard'
+
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
+
+// 'HelloProps' describes the shape of props.
+// State is never set so we use the '{}' type.
+
 let imageMapTemp: string[] = [];
 let imageMap = [
     "bbq",
@@ -64,38 +72,33 @@ window.onload = function (e) {
     if (!ideaGridEl)
         return;
 
+    // const reactIdeas: React.ReactElement<IdeaCard>[] = [];
+
     db.collection("ideas")
         .where("deleted", '==', false)
         .orderBy("created", "desc")
         .limit(pagesize).onSnapshot(querySnapshot => {
             const newIdeaEls: (HTMLElement | undefined)[] = [];
             const changes = querySnapshot.docChanges();
-            console.log(changes);
-            for (let i = 0; i < changes.length; i++) {
-                const c = changes[i];
-                console.log(c);
-                const isAlreadyInDom = ideaIs.findIndex(id => id === c.doc.id) != -1;
-                this.console.log(isAlreadyInDom);
 
-                const idea = { ...c.doc.data() } as IPeristedIdea;
-                if (!isAlreadyInDom) {
-                    ideaIs.push(idea.id);
-                    newIdeaEls.push(createIdeaItem(idea));
-                }
-                else {
-                    // TODO: write better dom update
-                    // TODO: only update dom if the state has changed
-                    const oldDomEl = ideaGridEl.querySelector('.mdl-card[data-id=' + idea.id + ']');
-                    if (oldDomEl) {
-                        oldDomEl.querySelector(".action-count")!.textContent = (idea.votes ? idea.votes : 1).toString();
-                        //oldDomEl.parentNode!.replaceChild(createIdeaItem(idea), oldDomEl!);
-                    }
-                    else {
-                        throw "The element does not exist";
-                    }
-                }
-            }
-            salvattore.prependElements(ideaGridEl, newIdeaEls);
+            // for (let i = 0; i < changes.length; i++) {
+            //     const c = changes[i];
+            //     const isAlreadyInDom = ideaIs.findIndex(id => id === c.doc.id) != -1;
+
+            //     const idea = { ...c.doc.data() } as IPeristedIdea;
+            //     if (!isAlreadyInDom) {
+            //         ideaIs.push(idea.id);
+            //         newIdeaEls.push(createIdeaItem(idea));
+            //         //reactIdeas.push(React.createElement(IdeaCard, idea));
+            //     }
+            // }
+            const data = changes.map(c => { return ({ ...c.doc.data() } as IPeristedIdea); });
+            ReactDOM.render(
+                React.createElement(IdeaCardGrid,
+                    {data: data}
+                ),
+                ideaGridEl);
+            //salvattore.prependElements(ideaGridEl, newIdeaEls);
         });
 
     ideasPanel = new Panel<void>(document.getElementById("ideas") as HTMLElement, false);
