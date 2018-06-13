@@ -68,7 +68,7 @@ declare const firebaseui: any;
 const ideaIs: string[] = [];
 
 window.onload = function (e) {
-    ideaGridEl = document.getElementById("idea-grid") as HTMLElement;
+    ideaGridEl = document.getElementById("ideas") as HTMLElement;
     if (!ideaGridEl)
         return;
 
