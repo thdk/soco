@@ -117,28 +117,19 @@ html, body {
   }
 
 #idea-grid {
-    .column {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 
-      float: left;
-      padding-top: 1em;
-
-      &.size-1of3 { width: 33.333%; }
-      &.size-1of1 { width: 100%; }
-      &.size-1of2 { width: 50%; }
-      &.size-1of3 { width: 33.333%; }
-
-      &:first-child {
-        article {
-          margin-left: 2em;
-        }
+  &:first-child {
+      margin-left: 2em;
       }
 
-      article {
-        margin-right: 2em;
-        margin-bottom: 2em;
-
         .mdl-card {
-          width: 100%;
+          margin-right: 2em;
+          margin-bottom: 2em;
+
+          width: 30%;
 
           .mdl-card__title {
             &.hasImage {
@@ -167,8 +158,6 @@ html, body {
             }
           }
         }
-      }
-    }
 
 }
   .action-wrapper {

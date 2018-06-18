@@ -78,28 +78,16 @@ window.onload = function (e) {
         .where("deleted", '==', false)
         .orderBy("created", "desc")
         .limit(pagesize).onSnapshot(querySnapshot => {
-            const newIdeaEls: (HTMLElement | undefined)[] = [];
-            const changes = querySnapshot.docChanges();
 
-            // for (let i = 0; i < changes.length; i++) {
-            //     const c = changes[i];
-            //     const isAlreadyInDom = ideaIs.findIndex(id => id === c.doc.id) != -1;
+            const ideaChilds = querySnapshot.docChanges()
+                .map(c => {
+                    const idea = c.doc.data();
+                    return React.createElement(IdeaCard, Object.assign({ key: idea.id }, idea as IPeristedIdea));
+                });
 
-            //     const idea = { ...c.doc.data() } as IPeristedIdea;
-            //     if (!isAlreadyInDom) {
-            //         ideaIs.push(idea.id);
-            //         newIdeaEls.push(createIdeaItem(idea));
-            //         //reactIdeas.push(React.createElement(IdeaCard, idea));
-            //     }
-            // }
-            const ideaChildEls: IdeaCard[] = [];
-            const ideaChilds = changes.map(c => { return ({ ...c.doc.data() } as IPeristedIdea); })
-                .map(idea => React.createElement(IdeaCard, Object.assign({key: idea.id, ref: (r: IdeaCard) => ideaChildEls.push(r)}, idea)));
             ReactDOM.render(
-                React.createElement(IdeaCardGrid, {ref: () => {alert('grid'); salvattore.recreateColumns(ideaGridEl)}}, ideaChilds),
+                React.createElement(IdeaCardGrid, {}, ideaChilds),
                 ideaGridEl);
-
-               // console.log(ideaChildEls.map(card => card.refs.article));
         });
 
     ideasPanel = new Panel<void>(document.getElementById("ideas") as HTMLElement, false);
