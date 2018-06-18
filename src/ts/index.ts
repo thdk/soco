@@ -92,13 +92,14 @@ window.onload = function (e) {
             //         //reactIdeas.push(React.createElement(IdeaCard, idea));
             //     }
             // }
-            const data = changes.map(c => { return ({ ...c.doc.data() } as IPeristedIdea); });
+            const ideaChildEls: IdeaCard[] = [];
+            const ideaChilds = changes.map(c => { return ({ ...c.doc.data() } as IPeristedIdea); })
+                .map(idea => React.createElement(IdeaCard, Object.assign({key: idea.id, ref: (r: IdeaCard) => ideaChildEls.push(r)}, idea)));
             ReactDOM.render(
-                React.createElement(IdeaCardGrid,
-                    {data: data}
-                ),
+                React.createElement(IdeaCardGrid, {ref: () => {alert('grid'); salvattore.recreateColumns(ideaGridEl)}}, ideaChilds),
                 ideaGridEl);
-            //salvattore.prependElements(ideaGridEl, newIdeaEls);
+
+               // console.log(ideaChildEls.map(card => card.refs.article));
         });
 
     ideasPanel = new Panel<void>(document.getElementById("ideas") as HTMLElement, false);

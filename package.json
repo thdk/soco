@@ -38,6 +38,6 @@
     "firebase": "^5.0.4",
     "firebaseui": "^3.0.0",
     "react": "^16.4.0",
-    "react-dom": "^16.4.0"
+    "react-dom": "^16.4.1"
   }
 }

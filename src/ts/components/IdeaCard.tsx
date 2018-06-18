@@ -1,5 +1,5 @@
 import * as React from "react";
-import { IPeristedIdea } from "../interfaces/IIdea";
+import { IPeristedIdea, IIdea } from "../interfaces/IIdea";
 
 
 
@@ -8,6 +8,10 @@ import { IPeristedIdea } from "../interfaces/IIdea";
 export class IdeaCard extends React.Component<IPeristedIdea, {}> {
     constructor(props: IPeristedIdea) {
         super(props);
+    }
+
+    getRef() {
+        return this.refs.article;
     }
 
     render() {
@@ -25,23 +29,27 @@ export class IdeaCard extends React.Component<IPeristedIdea, {}> {
             </div>
         </div>;
     }
+
+    componentdidMount() {
+        console.log("mount child");
+       //salvattore.prependElements(this.refs.grid, (this.refs.grid as HTMLElement).querySelectorAll('article'));
+    }
 }
 
-export class IdeaCardGrid extends React.Component<{ data: IPeristedIdea[] }, {}> {
-    private cards: any;
-
-    constructor(props: { data: IPeristedIdea[] }) {
-        super(props);
-    }
+export class IdeaCardGrid extends React.Component<{}, {}> {
     render() {
-        this.cards = this.props.data.map(idea => React.createElement(IdeaCard, { ...idea, key: idea.id}));
         return (
             <>
-                <span id="idea-grid" data-columns>
-                    {this.cards}
+                <span ref="grid" id="idea-grid" data-columns>
+                    {this.props.children}
                 </span>
                 <div className="clear"></div>
             </>
         )
+    }
+
+    componentdidMount() {
+        console.log("mount");
+        salvattore.prependElements(this.refs.grid, (this.refs.grid as HTMLElement).querySelectorAll('article'));
     }
 }
