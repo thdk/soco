@@ -7,7 +7,7 @@ import 'firebase/firestore';
 import 'firebase/storage';
 
 import utils from './framework/utils'
-import { IIdea, IPeristedIdea } from './interfaces/IIdea'
+import { IIdea, IPeristedIdea, IIdeaCardModel } from './interfaces/IIdea'
 import IPanel from './interfaces/IPanel';
 import { Panel, LoginPanel, SubmitIdeaPanel } from './framework/panel';
 
@@ -15,6 +15,10 @@ import { IdeaCard, IdeaCardGrid } from './components/IdeaCard'
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+
+import { createStore } from "redux";
+
+import IAppState from './interfaces/IAppState';
 
 // 'HelloProps' describes the shape of props.
 // State is never set so we use the '{}' type.
@@ -36,6 +40,36 @@ let imageMap = [
     "tuinieren",
     "yoga"
 ];
+
+const rootReducer = (state: IAppState = { ideas: [] }, action: { type: string, payload: any }): IAppState => {
+    console.log(action);
+    switch (action.type) {
+        case "IDEAS_ADDED":
+            const newIdeas = [...state.ideas, ...action.payload.ideas];
+            return {
+                ideas: newIdeas
+            }
+        case "IDEA_REMOVED":
+            return {
+                ideas: [...state.ideas.filter(i => i.id !== action.payload.key)]
+            }
+        case "IDEAS_UPDATED":
+            const updatedIdea = state.ideas.filter(i => i.id === action.payload.ideas[0].key)[0];
+            return {
+                ideas: [...state.ideas.filter(i => i.id !== action.payload.ideas[0].key), Object.assign({updatedIdea}, action.payload.ideas[0])]
+            }
+        default:
+            return {
+                ideas: [...state.ideas]
+            }
+    }
+}
+
+const appState: IAppState = {
+    ideas: []
+}
+
+const store = createStore(rootReducer);
 
 const firebaseApp = firebase.initializeApp({
     apiKey: config.firebase.apiKey,
@@ -65,24 +99,21 @@ let snackbarContainer: HTMLElement | null;
 
 declare const firebaseui: any;
 
-const ideaIs: string[] = [];
 
 window.onload = function (e) {
     ideaGridEl = document.getElementById("ideas") as HTMLElement;
     if (!ideaGridEl)
         return;
 
-    // const reactIdeas: React.ReactElement<IdeaCard>[] = [];
-
-    db.collection("ideas")
-        .where("deleted", '==', false)
+    db.collection("ideas").where("deleted", '==', false)
         .orderBy("created", "desc")
-        .limit(pagesize).onSnapshot(querySnapshot => {
+        .limit(pagesize).onSnapshot({ includeMetadataChanges: true }, querySnapshot => {
+            console.log(querySnapshot);
+            const changes = querySnapshot.docChanges();
 
-
-            const ideaChilds = querySnapshot.docs
+            const updatedIdeas = changes.filter(c => c.type === "modified");
+            const newIdeas = changes.filter(c => c.type === "added")
                 .map(c => {
-
                     // select a random dummy image
                     const image = null;
                     if (imageMap.length == 0) {
@@ -95,13 +126,29 @@ window.onload = function (e) {
                     const imageLoadPromise = storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL();
                     // end select random dummy image
 
-                    const idea = c.data();
-                    return React.createElement(IdeaCard, Object.assign({ key: idea.id, imageLoad: imageLoadPromise }, idea as IPeristedIdea));
+                    const idea = c.doc.data() as IPeristedIdea;
+                    const ideaEvents = {
+                        onVoteUp: (key: string) => onVoteUpIdea(key),
+                        onDeleteIdea: (key: string) => onDeleteIdea(key)
+                    }
+                    return Object.assign({ key: idea.id, imageLoad: imageLoadPromise, events: ideaEvents }, idea) as IIdeaCardModel;
                 });
 
-            ReactDOM.render(
-                React.createElement(IdeaCardGrid, {}, ideaChilds),
-                ideaGridEl);
+            if (newIdeas.length) {
+                store.dispatch({
+                    type: "IDEAS_ADDED", payload: {
+                        ideas: newIdeas
+                    }
+                });
+            }
+
+            if (updatedIdeas.length) {
+                store.dispatch({
+                    type: "IDEAS_UPDATED", payload: {
+                        ideas: updatedIdeas.map(i => i.doc.data() as IPeristedIdea)
+                    }
+                });
+            }
         });
 
     ideasPanel = new Panel<void>(document.getElementById("ideas") as HTMLElement, false);
@@ -112,24 +159,6 @@ window.onload = function (e) {
     loginPanel = new LoginPanel(document.getElementById("authentication") as HTMLElement, new firebaseui.auth.AuthUI(firebase.auth()), firebaseApp);
 
     snackbarContainer = document.querySelector('#snackbar');
-
-    ideaGridEl.onclick = (e) => {
-        const target = e.target as HTMLElement;
-
-        const deleteButtonEl = target.closest(".delete-icon");
-        if (deleteButtonEl) {
-            deleteIdeaAsync(deleteButtonEl.closest('.mdl-card')!.attributes.getNamedItem('data-id')!.value);
-        }
-
-        const likeButtonEl = target.closest(".like-action");
-        if (likeButtonEl) {
-            canVoteOnIdeaAsync()
-                .then(() => voteOnIdeaAsync(likeButtonEl.closest('.mdl-card')!.attributes.getNamedItem('data-id')!.value, firebaseApp.auth().currentUser!.uid)
-                    , () => {
-                        showSnackbarMessage("U moet ingelogd zijn om te kunnen stemmen.");
-                    });
-        };
-    };
 
     const headerNavigationLogoutButton = document.querySelector("header .mdl-navigation .logout");
     if (headerNavigationLogoutButton) {
@@ -216,6 +245,27 @@ window.onload = function (e) {
         unsubscribeOnAuthChanged();
         handleLoggedIn(user);
     });
+
+    store.subscribe(render);
+    render(); // display initial state in UI    
+}
+
+function render() {
+    ReactDOM.render(
+        React.createElement(IdeaCardGrid, { ideas: store.getState().ideas }),
+        ideaGridEl);
+}
+
+function onVoteUpIdea(key: string) {
+    canVoteOnIdeaAsync()
+        .then(() => voteOnIdeaAsync(key, firebaseApp.auth().currentUser!.uid)
+            , () => {
+                showSnackbarMessage("U moet ingelogd zijn om te kunnen stemmen.");
+            });
+}
+
+function onDeleteIdea(key: string) {
+    deleteIdeaAsync(key);
 }
 
 function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
@@ -246,9 +296,8 @@ function deleteIdeaAsync(id: string): Promise<void> {
         .then(() => {
             // TODO: move out UI stuff
             showSnackbarMessage("Uw idee werd verwijderd.");
-            ideaGridEl!.querySelector('.mdl-card[data-id=' + id + ']')!.parentElement!.remove();
-            salvattore.recreateColumns(ideaGridEl);
-        })
+            store.dispatch({ type: "IDEA_REMOVED", payload: { key: id } });
+        });
 }
 
 function canVoteOnIdeaAsync(): Promise<void> {

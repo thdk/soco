@@ -12,3 +12,11 @@ export interface IPeristedIdea extends IIdea {
     deleted: boolean;
     created: firebase.firestore.FieldValue
 }
+
+export interface IIdeaCardModel extends IPeristedIdea{
+    imageLoad?: Promise<string>;
+    events?: {
+        onDelete: (key: string) => void;
+        onVoteUp: (key: string) => void;
+    }
+}

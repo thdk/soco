@@ -1,28 +1,38 @@
 import * as React from "react";
-import { IPeristedIdea, IIdea } from "../interfaces/IIdea";
+import { IPeristedIdea, IIdea, IIdeaCardModel } from "../interfaces/IIdea";
 
-export class IdeaCard extends React.Component<IPeristedIdea & { imageLoad: Promise<string> }, { votes: number, imageUrl?: string }> {
-    constructor(props: IPeristedIdea & { imageLoad: Promise<string> }) {
+export class IdeaCard extends React.Component<IIdeaCardModel, { imageUrl?: string }> {
+    constructor(props: IIdeaCardModel) {
         super(props);
-        this.state = { votes: props.votes };
+        this.state = {};
 
-        this.props.imageLoad.then(imageUrl => {
-            this.setState({ imageUrl });
-        });
+        if (this.props.imageLoad) {
+            this.props.imageLoad.then(imageUrl => {
+                this.setState({ imageUrl });
+            });
+        }
     }
 
     increaseVote = () => {
-        this.setState({ votes: this.state.votes + 1 })
+        console.log(this);
+        console.log(this.props);
+        if(this.props.events && this.props.events.onVoteUp)
+            this.props.events.onVoteUp(this.props.id);
+    }
+
+    deleteIdea = () => {
+        if(this.props.events && this.props.events.onDelete)
+            this.props.events.onDelete(this.props.id);
     }
 
     render() {
-        let author = <></>;
+        let author: JSX.Element = <></>;
         if (this.props.author)
             author = <p>Door: {this.props.author}</p>;
 
         const cardActions = <div className="mdl-card__actions mdl-card--border">
             <div className="action-wrapper">
-                <span className="action-count">{this.state.votes ? this.state.votes : 1}</span>
+                <span className="action-count">{this.props.votes ? this.props.votes : 1}</span>
                 <i className="like-action material-icons" onClick={this.increaseVote}>favorite_border</i>
             </div>
         </div>;
@@ -31,7 +41,7 @@ export class IdeaCard extends React.Component<IPeristedIdea & { imageLoad: Promi
             backgroundImage: 'url(' + this.state.imageUrl + ')'
         };
 
-        return <div ref="article" key={this.props.id} className="demo-card-wide mdl-card mdl-shadow--2dp" data-id={this.props.id}>
+        return <div ref="article" key={this.props.id} className="demo-card-wide mdl-card mdl-shadow--2dp">
             <div className="mdl-card__title mdl-card--expand" style={titleStyle}>
                 <h2 className="mdl-card__title-text ">{this.props.title}</h2>
             </div>
@@ -41,7 +51,7 @@ export class IdeaCard extends React.Component<IPeristedIdea & { imageLoad: Promi
             </div>
             {cardActions}
             <div className="mdl-card__menu">
-                <button className="mdl-button delete-icon mdl-button--icon mdl-js-button mdl-js-ripple-effect">
+                <button onClick={this.deleteIdea} className="mdl-button delete-icon mdl-button--icon mdl-js-button mdl-js-ripple-effect">
                     <i className="material-icons">clear</i>
                 </button>
             </div>
@@ -49,11 +59,12 @@ export class IdeaCard extends React.Component<IPeristedIdea & { imageLoad: Promi
     }
 }
 
-export class IdeaCardGrid extends React.Component<{}, {}> {
+export class IdeaCardGrid extends React.Component<{ideas: IIdeaCardModel[]}, {}> {
     render() {
+        const cards = Array.from(this.props.ideas.values()).map(idea => React.createElement(IdeaCard, idea));
         return (
             <div ref="grid" id="idea-grid" data-columns>
-                {this.props.children}
+                {cards}
             </div>
         )
     }
