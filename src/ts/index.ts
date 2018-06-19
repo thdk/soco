@@ -41,6 +41,19 @@ let imageMap = [
     "yoga"
 ];
 
+const ideaReducer = (state: IIdeaCardModel, action: { type: string, payload: IIdeaCardModel }) => {
+    switch (action.type) {
+        case "IDEA_UPDATED":
+            if (action.payload.id !== state.id) {
+                return state;
+            }
+
+            return Object.assign({}, state, action.payload);
+        default:
+            return state;
+    }
+}
+
 const rootReducer = (state: IAppState = { ideas: [] }, action: { type: string, payload: any }): IAppState => {
     console.log(action);
     switch (action.type) {
@@ -53,10 +66,9 @@ const rootReducer = (state: IAppState = { ideas: [] }, action: { type: string, p
             return {
                 ideas: [...state.ideas.filter(i => i.id !== action.payload.key)]
             }
-        case "IDEAS_UPDATED":
-            const updatedIdea = state.ideas.filter(i => i.id === action.payload.ideas[0].key)[0];
+        case "IDEA_UPDATED":
             return {
-                ideas: [...state.ideas.filter(i => i.id !== action.payload.ideas[0].key), Object.assign({updatedIdea}, action.payload.ideas[0])]
+                ideas: state.ideas.map(i => ideaReducer(i, { type: action.type, payload: action.payload }))
             }
         default:
             return {
@@ -105,7 +117,8 @@ window.onload = function (e) {
     if (!ideaGridEl)
         return;
 
-    db.collection("ideas").where("deleted", '==', false)
+    db.collection("ideas")
+        .where("deleted", '==', false)
         .orderBy("created", "desc")
         .limit(pagesize).onSnapshot({ includeMetadataChanges: true }, querySnapshot => {
             console.log(querySnapshot);
@@ -129,9 +142,9 @@ window.onload = function (e) {
                     const idea = c.doc.data() as IPeristedIdea;
                     const ideaEvents = {
                         onVoteUp: (key: string) => onVoteUpIdea(key),
-                        onDeleteIdea: (key: string) => onDeleteIdea(key)
+                        onDelete: (key: string) => onDeleteIdea(key)
                     }
-                    return Object.assign({ key: idea.id, imageLoad: imageLoadPromise, events: ideaEvents }, idea) as IIdeaCardModel;
+                    return Object.assign(idea, { key: idea.id, imageLoad: imageLoadPromise, events: ideaEvents }) as IIdeaCardModel;
                 });
 
             if (newIdeas.length) {
@@ -143,11 +156,12 @@ window.onload = function (e) {
             }
 
             if (updatedIdeas.length) {
-                store.dispatch({
-                    type: "IDEAS_UPDATED", payload: {
-                        ideas: updatedIdeas.map(i => i.doc.data() as IPeristedIdea)
-                    }
-                });
+                for (let idea of updatedIdeas) {
+                    store.dispatch({
+                        type: "IDEA_UPDATED",
+                        payload: idea
+                    });
+                }
             }
         });
 
@@ -247,7 +261,7 @@ window.onload = function (e) {
     });
 
     store.subscribe(render);
-    render(); // display initial state in UI    
+    render(); // display initial state in UI
 }
 
 function render() {
@@ -265,6 +279,7 @@ function onVoteUpIdea(key: string) {
 }
 
 function onDeleteIdea(key: string) {
+    console.log("begin delete idea: " + key);
     deleteIdeaAsync(key);
 }
 
@@ -321,6 +336,13 @@ function voteOnIdeaAsync(id: string, uid: string): Promise<void> {
 
             const newVoteCount = (doc.data()! as IPeristedIdea).votes + 1;
             transaction.update(ideaRef, { votes: newVoteCount });
+
+            // to verify: good idea to dispatch the action here as well to get a better ui response?
+            // Seems transactions to not fire a snapshot change untill really save in database...
+            store.dispatch({
+                type: "IDEA_UPDATED",
+                payload: Object.assign({}, doc.data() as IPeristedIdea, { votes: newVoteCount })
+            });
         });
     }).then(function () {
         console.log("Transaction successfully committed!");

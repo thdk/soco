@@ -21,8 +21,14 @@ export class IdeaCard extends React.Component<IIdeaCardModel, { imageUrl?: strin
     }
 
     deleteIdea = () => {
-        if(this.props.events && this.props.events.onDelete)
+        console.log("request to delete idea with id: " + this.props.id);
+        if(this.props.events && this.props.events.onDelete){
             this.props.events.onDelete(this.props.id);
+        }
+        else {
+            console.log("No delete event attached");
+            console.log(this.props.events);
+        }
     }
 
     render() {
