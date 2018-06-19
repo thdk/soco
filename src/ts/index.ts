@@ -79,10 +79,24 @@ window.onload = function (e) {
         .orderBy("created", "desc")
         .limit(pagesize).onSnapshot(querySnapshot => {
 
-            const ideaChilds = querySnapshot.docChanges()
+
+            const ideaChilds = querySnapshot.docs
                 .map(c => {
-                    const idea = c.doc.data();
-                    return React.createElement(IdeaCard, Object.assign({ key: idea.id }, idea as IPeristedIdea));
+
+                    // select a random dummy image
+                    const image = null;
+                    if (imageMap.length == 0) {
+                        imageMap = imageMapTemp.slice();
+                        imageMapTemp = [];
+                    }
+
+                    imageMapTemp.push(imageMap.pop()!);
+
+                    const imageLoadPromise = storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL();
+                    // end select random dummy image
+
+                    const idea = c.data();
+                    return React.createElement(IdeaCard, Object.assign({ key: idea.id, imageLoad: imageLoadPromise }, idea as IPeristedIdea));
                 });
 
             ReactDOM.render(
@@ -101,15 +115,6 @@ window.onload = function (e) {
 
     ideaGridEl.onclick = (e) => {
         const target = e.target as HTMLElement;
-        const buttonEl = target.closest('.vote-button');
-        if (buttonEl) {
-            //if (buttonEl.classList.contains("plus"))
-            // alert("plus clicked");
-            // else if (buttonEl.classList.contains("minus"))
-            // alert("minus clicked");
-
-            buttonEl.querySelector(".bg")!.classList.toggle("active");
-        }
 
         const deleteButtonEl = target.closest(".delete-icon");
         if (deleteButtonEl) {
@@ -299,68 +304,6 @@ function showSnackbarMessage(message: string) {
         };
         (snackbarContainer as any).MaterialSnackbar.showSnackbar(data);
     }
-}
-
-function createIdeaItem(idea: IPeristedIdea): HTMLElement {
-    const article = document.createElement('article');
-    const articleContent = `
-    <div class="demo-card-wide mdl-card mdl-shadow--2dp" data-id="${idea.id}">
-        <div class="mdl-card__title">
-            <h2 class="mdl-card__title-text">${idea.title}</h2>
-        </div>
-        <div class="mdl-card__supporting-text">
-            <p>${idea.description}</p>
-
-            ${createAuthorTemplate(idea)}
-        </div>
-        ${createCardActions(idea)}
-        </div>
-        <div class="mdl-card__menu">
-            <button class="mdl-button delete-icon mdl-button--icon mdl-js-button mdl-js-ripple-effect">
-                <i class="material-icons">clear</i>
-            </button>
-        </div>
-    </div>
-    `;
-
-    article.innerHTML = articleContent;
-    const image = null;
-    if (imageMap.length == 0) {
-        imageMap = imageMapTemp.slice();
-        imageMapTemp = [];
-    }
-
-    imageMapTemp.push(imageMap.pop()!);
-
-    storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL().then(imageUrl => {
-        const titleEl = (article.querySelector('.mdl-card__title') as HTMLElement);
-        titleEl.classList.add("hasImage");
-        titleEl.style.backgroundImage = 'url(' + imageUrl + ')';
-    });
-
-    return article;
-}
-
-function createAuthorTemplate(idea: IIdea) {
-    if (idea.author)
-        return `<p>Door: ${idea.author}</p>`;
-    else
-        return "";
-}
-
-function createCardActions(idea: IIdea) {
-    return `<div class="mdl-card__actions mdl-card--border">
-        <div class="action-wrapper">
-            <span class="action-count">${idea.votes ? idea.votes : 1}</span>
-            <i class="like-action material-icons">favorite_border</i>
-        </div>`;
-}
-
-function voteButtonClickEvent(e: MouseEvent) {
-    const button = e.currentTarget;
-    if (!button || !(button instanceof Element)) return;
-
-    button.querySelector(".bg")!.classList.toggle("active");
 }
 
 function handleLoggedIn(user: firebase.User | null) {
