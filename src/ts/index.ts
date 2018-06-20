@@ -58,7 +58,8 @@ const rootReducer = (state: IAppState = { ideas: [] }, action: { type: string, p
     console.log(action);
     switch (action.type) {
         case "IDEAS_ADDED":
-            const newIdeas = [...state.ideas, ...action.payload.ideas];
+            // add new ideas to the beginning of the results
+            const newIdeas = [...action.payload.ideas, ...state.ideas];
             return {
                 ideas: newIdeas
             }
@@ -106,6 +107,7 @@ let ideasPanel: IPanel<void>;
 let newIdeaPanel: SubmitIdeaPanel;
 let loginPanel: IPanel<firebase.User | null>;
 let ideaGridEl: HTMLElement;
+let layoutEl: HTMLElement;
 
 let snackbarContainer: HTMLElement | null;
 
@@ -113,6 +115,7 @@ declare const firebaseui: any;
 
 
 window.onload = function (e) {
+    layoutEl = document.querySelector('.mdl-layout') as HTMLElement;
     ideaGridEl = document.getElementById("ideas") as HTMLElement;
     if (!ideaGridEl)
         return;
@@ -178,10 +181,7 @@ window.onload = function (e) {
     if (headerNavigationLogoutButton) {
         headerNavigationLogoutButton.addEventListener("click", e => {
             e.preventDefault();
-            firebase.auth().signOut().then(() => {
-                document.body.classList.remove("logged-in");
-                showSnackbarMessage(`Tot ziens!`);
-            });
+            triggerLogout();
         });
     }
 
@@ -189,11 +189,25 @@ window.onload = function (e) {
     if (headerNavigationLoginButton) {
         headerNavigationLoginButton.addEventListener("click", e => {
             e.preventDefault();
-            ideasPanel.close(undefined);
-            loginPanel.openAsync().then(user => {
-                ideasPanel.openAsync();
-                handleLoggedIn(user);
-            })
+            triggerLogin();
+        });
+    }
+
+    const drawerNavigationLogoutButton = document.querySelector(".mdl-layout__drawer .logout");
+    if (drawerNavigationLogoutButton) {
+        drawerNavigationLogoutButton.addEventListener("click", e => {
+            e.preventDefault();
+            (layoutEl as any).MaterialLayout.toggleDrawer();
+            triggerLogout();
+        });
+    }
+
+    const drawerNavigationLoginButton = document.querySelector(".mdl-layout__drawer .login");
+    if (drawerNavigationLoginButton) {
+        drawerNavigationLoginButton.addEventListener("click", e => {
+            e.preventDefault();
+            (layoutEl as any).MaterialLayout.toggleDrawer();
+            triggerLogin();
         });
     }
 
@@ -262,6 +276,21 @@ window.onload = function (e) {
 
     store.subscribe(render);
     render(); // display initial state in UI
+}
+
+function triggerLogin() {
+    ideasPanel.close(undefined);
+    loginPanel.openAsync().then(user => {
+        ideasPanel.openAsync();
+        handleLoggedIn(user);
+    })
+}
+
+function triggerLogout() {
+    firebase.auth().signOut().then(() => {
+        document.body.classList.remove("logged-in");
+        showSnackbarMessage(`Tot ziens!`);
+    });
 }
 
 function render() {
