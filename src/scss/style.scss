@@ -1,6 +1,7 @@
 @import 'colors';
 // @import '../../node_modules/material-design-lite/src/material-design-lite';
 
+@import 'mixins';
 @import "scrolldown";
 @import "shorthands";
 @import "panels";
@@ -152,15 +153,18 @@ html, body {
             justify-content: flex-end;
 
             .action-wrapper {
+
               &:hover {
                 color: red;
                 cursor: pointer;
 
                 .like-action {
+                  @include no-user-select;
                   content: 'favorite';
                 }
               }
               .like-action {
+                @include no-user-select;
                 content: 'favorite_border';
               }
             }
