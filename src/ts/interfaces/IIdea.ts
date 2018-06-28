@@ -15,7 +15,7 @@ export interface IPeristedIdea extends IIdea {
 
 export interface IIdeaCardModel extends IPeristedIdea{
     imageLoad?: Promise<string>;
-    events?: {
+    action?: {
         onDelete: (key: string) => void;
         onVoteUp: (key: string) => void;
     }

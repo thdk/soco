@@ -16,18 +16,18 @@ export class IdeaCard extends React.Component<IIdeaCardModel, { imageUrl?: strin
     increaseVote = () => {
         console.log(this);
         console.log(this.props);
-        if(this.props.events && this.props.events.onVoteUp)
-            this.props.events.onVoteUp(this.props.id);
+        if(this.props.action && this.props.action.onVoteUp)
+            this.props.action.onVoteUp(this.props.id);
     }
 
     deleteIdea = () => {
         console.log("request to delete idea with id: " + this.props.id);
-        if(this.props.events && this.props.events.onDelete){
-            this.props.events.onDelete(this.props.id);
+        if(this.props.action && this.props.action.onDelete){
+            this.props.action.onDelete(this.props.id);
         }
         else {
             console.log("No delete event attached");
-            console.log(this.props.events);
+            console.log(this.props.action);
         }
     }
 

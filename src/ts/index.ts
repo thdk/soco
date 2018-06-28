@@ -19,6 +19,8 @@ import * as ReactDOM from 'react-dom';
 import { createStore } from "redux";
 
 import IAppState from './interfaces/IAppState';
+import { IdeaActionType, Action as IdeaAction, updateIdea, deleteIdea, addIdeas } from './actions/idea';
+import { ideaReducer, ideas } from './reducers/ideaReducer';
 
 // 'HelloProps' describes the shape of props.
 // State is never set so we use the '{}' type.
@@ -41,48 +43,12 @@ let imageMap = [
     "yoga"
 ];
 
-const ideaReducer = (state: IIdeaCardModel, action: { type: string, payload: IIdeaCardModel }) => {
-    switch (action.type) {
-        case "IDEA_UPDATED":
-            if (action.payload.id !== state.id) {
-                return state;
-            }
-
-            return Object.assign({}, state, action.payload);
-        default:
-            return state;
-    }
-}
-
-const rootReducer = (state: IAppState = { ideas: [] }, action: { type: string, payload: any }): IAppState => {
-    console.log(action);
-    switch (action.type) {
-        case "IDEAS_ADDED":
-            // add new ideas to the beginning of the results
-            const newIdeas = [...action.payload.ideas, ...state.ideas];
-            return {
-                ideas: newIdeas
-            }
-        case "IDEA_REMOVED":
-            return {
-                ideas: [...state.ideas.filter(i => i.id !== action.payload.key)]
-            }
-        case "IDEA_UPDATED":
-            return {
-                ideas: state.ideas.map(i => ideaReducer(i, { type: action.type, payload: action.payload }))
-            }
-        default:
-            return {
-                ideas: [...state.ideas]
-            }
-    }
-}
 
 const appState: IAppState = {
     ideas: []
 }
 
-const store = createStore(rootReducer);
+const store = createStore(ideas);
 
 const firebaseApp = firebase.initializeApp({
     apiKey: config.firebase.apiKey,
@@ -127,43 +93,38 @@ window.onload = function (e) {
             console.log(querySnapshot);
             const changes = querySnapshot.docChanges();
 
-            const updatedIdeas = changes.filter(c => c.type === "modified");
+            const updatedIdeas = changes.filter(c => c.type === "modified")
+                .map(c => c.doc.data());
             const newIdeas = changes.filter(c => c.type === "added")
-                .map(c => {
-                    // select a random dummy image
-                    const image = null;
-                    if (imageMap.length == 0) {
-                        imageMap = imageMapTemp.slice();
-                        imageMapTemp = [];
-                    }
+                .map(c => c.doc.data());
+                // .map(c => {
+                //     // select a random dummy image
+                //     const image = null;
+                //     if (imageMap.length == 0) {
+                //         imageMap = imageMapTemp.slice();
+                //         imageMapTemp = [];
+                //     }
 
-                    imageMapTemp.push(imageMap.pop()!);
+                //     imageMapTemp.push(imageMap.pop()!);
 
-                    const imageLoadPromise = storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL();
-                    // end select random dummy image
+                //     const imageLoadPromise = storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL();
+                //     // end select random dummy image
 
-                    const idea = c.doc.data() as IPeristedIdea;
-                    const ideaEvents = {
-                        onVoteUp: (key: string) => onVoteUpIdea(key),
-                        onDelete: (key: string) => onDeleteIdea(key)
-                    }
-                    return Object.assign(idea, { key: idea.id, imageLoad: imageLoadPromise, events: ideaEvents }) as IIdeaCardModel;
-                });
+                //     const idea = c.doc.data() as IPeristedIdea;
+                //     const ideaEvents = {
+                //         onVoteUp: (key: string) => onVoteUpIdea(key),
+                //         onDelete: (key: string) => onDeleteIdea(key)
+                //     }
+                //     return Object.assign(idea, { key: idea.id, imageLoad: imageLoadPromise, events: ideaEvents }) as IIdeaCardModel;
+                // });
 
             if (newIdeas.length) {
-                store.dispatch({
-                    type: "IDEAS_ADDED", payload: {
-                        ideas: newIdeas
-                    }
-                });
+                store.dispatch(addIdeas(newIdeas as IPeristedIdea[]));
             }
 
             if (updatedIdeas.length) {
                 for (let idea of updatedIdeas) {
-                    store.dispatch({
-                        type: "IDEA_UPDATED",
-                        payload: idea
-                    });
+                    store.dispatch(updateIdea(idea as IPeristedIdea));
                 }
             }
         });
@@ -340,7 +301,7 @@ function deleteIdeaAsync(id: string): Promise<void> {
         .then(() => {
             // TODO: move out UI stuff
             showSnackbarMessage("Uw idee werd verwijderd.");
-            store.dispatch({ type: "IDEA_REMOVED", payload: { key: id } });
+            store.dispatch(deleteIdea(id));
         });
 }
 
@@ -368,10 +329,7 @@ function voteOnIdeaAsync(id: string, uid: string): Promise<void> {
 
             // to verify: good idea to dispatch the action here as well to get a better ui response?
             // Seems transactions to not fire a snapshot change untill really save in database...
-            store.dispatch({
-                type: "IDEA_UPDATED",
-                payload: Object.assign({}, doc.data() as IPeristedIdea, { votes: newVoteCount })
-            });
+            store.dispatch(updateIdea(Object.assign({}, doc.data() as IPeristedIdea, { votes: newVoteCount })));
         });
     }).then(function () {
         console.log("Transaction successfully committed!");
