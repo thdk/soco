@@ -35,10 +35,12 @@
   },
   "dependencies": {
     "@types/react-dom": "^16.0.6",
+    "@types/react-redux": "^6.0.3",
     "firebase": "^5.0.4",
     "firebaseui": "^3.0.0",
-    "redux": "^4.0.0",
     "react": "^16.4.0",
-    "react-dom": "^16.4.1"
+    "react-dom": "^16.4.1",
+    "react-redux": "^5.0.7",
+    "redux": "^4.0.0"
   }
 }

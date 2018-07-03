@@ -11,16 +11,17 @@ import { IIdea, IPeristedIdea, IIdeaCardModel } from './interfaces/IIdea'
 import IPanel from './interfaces/IPanel';
 import { Panel, LoginPanel, SubmitIdeaPanel } from './framework/panel';
 
-import { IdeaCard, IdeaCardGrid } from './components/IdeaCard'
+import { IdeaCardGrid } from './components/IdeaCard'
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { createStore } from "redux";
+import { createStore, Store } from "redux";
 
 import IAppState from './interfaces/IAppState';
 import { IdeaActionType, Action as IdeaAction, updateIdea, deleteIdea, addIdeas } from './actions/idea';
 import { ideaReducer, ideas } from './reducers/ideaReducer';
+import { Provider } from 'react-redux';
 
 // 'HelloProps' describes the shape of props.
 // State is never set so we use the '{}' type.
@@ -42,13 +43,6 @@ let imageMap = [
     "tuinieren",
     "yoga"
 ];
-
-
-const appState: IAppState = {
-    ideas: []
-}
-
-const store = createStore(ideas);
 
 const firebaseApp = firebase.initializeApp({
     apiKey: config.firebase.apiKey,
@@ -79,6 +73,8 @@ let snackbarContainer: HTMLElement | null;
 
 declare const firebaseui: any;
 
+// TODO: move this to the Provider
+let store: Store;
 
 window.onload = function (e) {
     layoutEl = document.querySelector('.mdl-layout') as HTMLElement;
@@ -94,9 +90,9 @@ window.onload = function (e) {
             const changes = querySnapshot.docChanges();
 
             const updatedIdeas = changes.filter(c => c.type === "modified")
-                .map(c => c.doc.data());
+                .map(c => Object.assign({ key: c.doc.id}, c.doc.data()));
             const newIdeas = changes.filter(c => c.type === "added")
-                .map(c => c.doc.data());
+                .map(c => Object.assign({ key: c.doc.id}, c.doc.data()));
                 // .map(c => {
                 //     // select a random dummy image
                 //     const image = null;
@@ -119,12 +115,22 @@ window.onload = function (e) {
                 // });
 
             if (newIdeas.length) {
-                store.dispatch(addIdeas(newIdeas as IPeristedIdea[]));
+                if (!store) {
+                // create store with initial state
+                    store = createStore(ideas, {ideas: newIdeas});
+                    ReactDOM.render(
+                        <Provider store={store}>
+                        <IdeaCardGrid ideas={store.getState().ideas}/>
+                        </Provider>,
+                        ideaGridEl);
+                }
+
+               store.dispatch(addIdeas(newIdeas as IIdeaCardModel[]));
             }
 
             if (updatedIdeas.length) {
                 for (let idea of updatedIdeas) {
-                    store.dispatch(updateIdea(idea as IPeristedIdea));
+                  store.dispatch(updateIdea(idea as IIdeaCardModel));
                 }
             }
         });
@@ -234,9 +240,6 @@ window.onload = function (e) {
         unsubscribeOnAuthChanged();
         handleLoggedIn(user);
     });
-
-    store.subscribe(render);
-    render(); // display initial state in UI
 }
 
 function triggerLogin() {
@@ -252,12 +255,6 @@ function triggerLogout() {
         document.body.classList.remove("logged-in");
         showSnackbarMessage(`Tot ziens!`);
     });
-}
-
-function render() {
-    ReactDOM.render(
-        React.createElement(IdeaCardGrid, { ideas: store.getState().ideas }),
-        ideaGridEl);
 }
 
 function onVoteUpIdea(key: string) {
@@ -329,7 +326,7 @@ function voteOnIdeaAsync(id: string, uid: string): Promise<void> {
 
             // to verify: good idea to dispatch the action here as well to get a better ui response?
             // Seems transactions to not fire a snapshot change untill really save in database...
-            store.dispatch(updateIdea(Object.assign({}, doc.data() as IPeristedIdea, { votes: newVoteCount })));
+            store.dispatch(updateIdea(Object.assign({key: doc.id}, doc.data() as IIdeaCardModel, { votes: newVoteCount })));
         });
     }).then(function () {
         console.log("Transaction successfully committed!");
