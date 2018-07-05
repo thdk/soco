@@ -1,7 +1,7 @@
 import { IIdeaCardModel } from "../interfaces/IIdea";
 
 export enum IdeaActionType {
-    UPDATE_IDEA,
+    UPDATE_IDEA = 0,
     ADD_IDEA,
     ADD_IDEAS,
     DELETE_IDEA,
@@ -33,7 +33,7 @@ export interface IVoteOnIdeaAction {
     payload: {id: string, up: boolean};
 }
 
-export type Action = IDeleteIdeaAction | IUpdateIdeaAction | IAddIdeasAction | IAddIdeaAction;
+export type Action = IDeleteIdeaAction | IUpdateIdeaAction | IAddIdeasAction | IAddIdeaAction | IVoteOnIdeaAction;
 
 export const updateIdea = (idea: IIdeaCardModel): IUpdateIdeaAction => {
     return {

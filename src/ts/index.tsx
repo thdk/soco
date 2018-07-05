@@ -3,7 +3,6 @@ import { config } from '../../config';
 import * as firebase from 'firebase/app';
 import 'firebaseui';
 import 'firebase/auth';
-import 'firebase/firestore';
 import 'firebase/storage';
 
 import utils from './framework/utils'
@@ -11,17 +10,18 @@ import { IIdea, IPeristedIdea, IIdeaCardModel } from './interfaces/IIdea'
 import IPanel from './interfaces/IPanel';
 import { Panel, LoginPanel, SubmitIdeaPanel } from './framework/panel';
 
-import { IdeaCardGrid } from './components/IdeaCard'
+import {IdeaCardCollection} from './containers/IdeaCardGrid'
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { createStore, Store } from "redux";
+import { createStore, Store, applyMiddleware } from "redux";
 
 import IAppState from './interfaces/IAppState';
 import { IdeaActionType, Action as IdeaAction, updateIdea, deleteIdea, addIdeas } from './actions/idea';
 import { ideaReducer, ideas } from './reducers/ideaReducer';
 import { Provider } from 'react-redux';
+import { firestoreSync, logger, firebaseApp, dbIdeasRef, deleteIdeaAsync } from './middleware';
 
 // 'HelloProps' describes the shape of props.
 // State is never set so we use the '{}' type.
@@ -44,23 +44,6 @@ let imageMap = [
     "yoga"
 ];
 
-const firebaseApp = firebase.initializeApp({
-    apiKey: config.firebase.apiKey,
-    authDomain: config.firebase.authDomain,
-    projectId: config.firebase.projectId,
-    storageBucket: config.firebase.storageBucket
-});
-
-// Initialize Cloud Firestore through Firebase
-const db = firebase.firestore();
-const storage = firebase.storage();
-const storageRef = storage.ref();
-
-const settings = { timestampsInSnapshots: true };
-db.settings(settings);
-
-const dbIdeasRef = db.collection("ideas");
-
 const pagesize = 10;
 
 let ideasPanel: IPanel<void>;
@@ -82,7 +65,7 @@ window.onload = function (e) {
     if (!ideaGridEl)
         return;
 
-    db.collection("ideas")
+    dbIdeasRef
         .where("deleted", '==', false)
         .orderBy("created", "desc")
         .limit(pagesize).onSnapshot({ includeMetadataChanges: true }, querySnapshot => {
@@ -90,47 +73,48 @@ window.onload = function (e) {
             const changes = querySnapshot.docChanges();
 
             const updatedIdeas = changes.filter(c => c.type === "modified")
-                .map(c => Object.assign({ key: c.doc.id}, c.doc.data()));
+                .map(c => Object.assign({ key: c.doc.id }, c.doc.data()));
             const newIdeas = changes.filter(c => c.type === "added")
-                .map(c => Object.assign({ key: c.doc.id}, c.doc.data()));
-                // .map(c => {
-                //     // select a random dummy image
-                //     const image = null;
-                //     if (imageMap.length == 0) {
-                //         imageMap = imageMapTemp.slice();
-                //         imageMapTemp = [];
-                //     }
+                .map(c => Object.assign({ key: c.doc.id }, c.doc.data()));
+            // .map(c => {
+            //     // select a random dummy image
+            //     const image = null;
+            //     if (imageMap.length == 0) {
+            //         imageMap = imageMapTemp.slice();
+            //         imageMapTemp = [];
+            //     }
 
-                //     imageMapTemp.push(imageMap.pop()!);
+            //     imageMapTemp.push(imageMap.pop()!);
 
-                //     const imageLoadPromise = storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL();
-                //     // end select random dummy image
+            //     const imageLoadPromise = storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL();
+            //     // end select random dummy image
 
-                //     const idea = c.doc.data() as IPeristedIdea;
-                //     const ideaEvents = {
-                //         onVoteUp: (key: string) => onVoteUpIdea(key),
-                //         onDelete: (key: string) => onDeleteIdea(key)
-                //     }
-                //     return Object.assign(idea, { key: idea.id, imageLoad: imageLoadPromise, events: ideaEvents }) as IIdeaCardModel;
-                // });
+            //     const idea = c.doc.data() as IPeristedIdea;
+            //     const ideaEvents = {
+            //         onVoteUp: (key: string) => onVoteUpIdea(key),
+            //         onDelete: (key: string) => onDeleteIdea(key)
+            //     }
+            //     return Object.assign(idea, { key: idea.id, imageLoad: imageLoadPromise, events: ideaEvents }) as IIdeaCardModel;
+            // });
 
             if (newIdeas.length) {
                 if (!store) {
-                // create store with initial state
-                    store = createStore(ideas, {ideas: newIdeas});
+                    // create store with initial state
+                    store = createStore(ideas, {ideas: newIdeas}, applyMiddleware(firestoreSync, logger) );
                     ReactDOM.render(
                         <Provider store={store}>
-                        <IdeaCardGrid ideas={store.getState().ideas}/>
+                            <IdeaCardCollection />
                         </Provider>,
                         ideaGridEl);
                 }
-
-               store.dispatch(addIdeas(newIdeas as IIdeaCardModel[]));
+                else {
+                    store.dispatch(addIdeas(newIdeas as IIdeaCardModel[]));
+                }
             }
 
             if (updatedIdeas.length) {
                 for (let idea of updatedIdeas) {
-                  store.dispatch(updateIdea(idea as IIdeaCardModel));
+                    store.dispatch(updateIdea(idea as IIdeaCardModel));
                 }
             }
         });
@@ -257,18 +241,18 @@ function triggerLogout() {
     });
 }
 
-function onVoteUpIdea(key: string) {
-    canVoteOnIdeaAsync()
-        .then(() => voteOnIdeaAsync(key, firebaseApp.auth().currentUser!.uid)
-            , () => {
-                showSnackbarMessage("U moet ingelogd zijn om te kunnen stemmen.");
-            });
-}
+// function onVoteUpIdea(key: string) {
+//     canVoteOnIdeaAsync()
+//         .then(() => voteOnIdeaAsync(key, firebaseApp.auth().currentUser!.uid)
+//             , () => {
+//                 showSnackbarMessage("U moet ingelogd zijn om te kunnen stemmen.");
+//             });
+// }
 
-function onDeleteIdea(key: string) {
-    console.log("begin delete idea: " + key);
-    deleteIdeaAsync(key);
-}
+// function onDeleteIdea(key: string) {
+//     console.log("begin delete idea: " + key);
+//     deleteIdeaAsync(key);
+// }
 
 function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
     return new Promise((resolve, reject) => {
@@ -293,14 +277,7 @@ function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
     });
 }
 
-function deleteIdeaAsync(id: string): Promise<void> {
-    return dbIdeasRef.doc(id).update({ deleted: true })
-        .then(() => {
-            // TODO: move out UI stuff
-            showSnackbarMessage("Uw idee werd verwijderd.");
-            store.dispatch(deleteIdea(id));
-        });
-}
+
 
 function canVoteOnIdeaAsync(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
@@ -312,28 +289,7 @@ function canVoteOnIdeaAsync(): Promise<void> {
     });
 }
 
-function voteOnIdeaAsync(id: string, uid: string): Promise<void> {
-    const ideaRef = dbIdeasRef.doc(id);
-    return db.runTransaction(transaction => {
-        // This code may get re-run multiple times if there are conflicts.
-        return transaction.get(ideaRef).then(doc => {
-            if (!doc.exists) {
-                throw "Document does not exist!";
-            }
 
-            const newVoteCount = (doc.data()! as IPeristedIdea).votes + 1;
-            transaction.update(ideaRef, { votes: newVoteCount });
-
-            // to verify: good idea to dispatch the action here as well to get a better ui response?
-            // Seems transactions to not fire a snapshot change untill really save in database...
-            store.dispatch(updateIdea(Object.assign({key: doc.id}, doc.data() as IIdeaCardModel, { votes: newVoteCount })));
-        });
-    }).then(function () {
-        console.log("Transaction successfully committed!");
-    }).catch(function (error) {
-        console.log("Transaction failed: ", error);
-    });
-}
 
 function showSnackbarMessageAsync(message: string, action: string) {
     return new Promise((resolve, reject) => {
