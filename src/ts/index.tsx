@@ -8,7 +8,7 @@ import 'firebase/storage';
 import utils from './framework/utils'
 import { IIdea, IPeristedIdea, IIdeaCardModel } from './interfaces/IIdea'
 import IPanel from './interfaces/IPanel';
-import { Panel, LoginPanel, SubmitIdeaPanel } from './framework/panel';
+import { Panel} from './framework/panel';
 
 import {IdeaCardCollection} from './containers/IdeaCardGrid'
 
@@ -22,9 +22,8 @@ import { IdeaActionType, Action as IdeaAction, updateIdea, deleteIdea, addIdeas 
 import { ideaReducer, ideas } from './reducers/ideaReducer';
 import { Provider } from 'react-redux';
 import { firestoreSync, logger, firebaseApp, dbIdeasRef, deleteIdeaAsync } from './middleware';
-
-// 'HelloProps' describes the shape of props.
-// State is never set so we use the '{}' type.
+import { SubmitIdeaPanel } from './framework/panels/submitideapanel';
+import { LoginPanel } from './framework/panels/loginpanel';
 
 let imageMapTemp: string[] = [];
 let imageMap = [
@@ -241,13 +240,6 @@ function triggerLogout() {
     });
 }
 
-// function onVoteUpIdea(key: string) {
-//     canVoteOnIdeaAsync()
-//         .then(() => voteOnIdeaAsync(key, firebaseApp.auth().currentUser!.uid)
-//             , () => {
-//                 showSnackbarMessage("U moet ingelogd zijn om te kunnen stemmen.");
-//             });
-// }
 
 // function onDeleteIdea(key: string) {
 //     console.log("begin delete idea: " + key);
@@ -277,21 +269,7 @@ function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
     });
 }
 
-
-
-function canVoteOnIdeaAsync(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        const u = firebaseApp.auth().onAuthStateChanged((user: firebase.User | null) => {
-            u(); // unsubscribe the auth changed listener
-            if (user) resolve();
-            else reject();
-        })
-    });
-}
-
-
-
-function showSnackbarMessageAsync(message: string, action: string) {
+const showSnackbarMessageAsync = (message: string, action: string) => {
     return new Promise((resolve, reject) => {
         // show snackbar
 
@@ -307,7 +285,7 @@ function showSnackbarMessageAsync(message: string, action: string) {
     })
 }
 
-function showSnackbarMessage(message: string) {
+export const showSnackbarMessage = (message: string) => {
     if (snackbarContainer) {
         const data = {
             message: message,
