@@ -1,8 +1,8 @@
-import { Panel } from "../panel";
 import { IIdea } from "../../interfaces/IIdea";
 
 import * as firebase from 'firebase/app'
 import utils from '../utils';
+import { Panel } from "./panel";
 
 export class SubmitIdeaPanel extends Panel<IIdea | undefined> {
     private readonly firebaseApp: any;

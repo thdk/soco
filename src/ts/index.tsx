@@ -7,10 +7,8 @@ import 'firebase/storage';
 
 import utils from './framework/utils'
 import { IIdea, IPeristedIdea, IIdeaCardModel } from './interfaces/IIdea'
-import IPanel from './interfaces/IPanel';
-import { Panel} from './framework/panel';
 
-import {IdeaCardCollection} from './containers/IdeaCardGrid'
+import { IdeaCardCollection } from './containers/IdeaCardGrid'
 
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
@@ -21,9 +19,9 @@ import IAppState from './interfaces/IAppState';
 import { IdeaActionType, Action as IdeaAction, updateIdea, deleteIdea, addIdeas } from './actions/idea';
 import { ideaReducer, ideas } from './reducers/ideaReducer';
 import { Provider } from 'react-redux';
-import { firestoreSync, logger, firebaseApp, dbIdeasRef, deleteIdeaAsync } from './middleware';
-import { SubmitIdeaPanel } from './framework/panels/submitideapanel';
-import { LoginPanel } from './framework/panels/loginpanel';
+import { firestoreSync, logger, firebaseApp, dbIdeasRef, deleteIdeaAsync } from './middleware/firestore';
+import { SubmitIdeaPanel, IPanel, Panel, LoginPanel } from './framework/panels';
+import { IdeaCardGrid } from './components/IdeaCardCollection';
 
 let imageMapTemp: string[] = [];
 let imageMap = [
@@ -64,59 +62,13 @@ window.onload = function (e) {
     if (!ideaGridEl)
         return;
 
-    dbIdeasRef
-        .where("deleted", '==', false)
-        .orderBy("created", "desc")
-        .limit(pagesize).onSnapshot({ includeMetadataChanges: true }, querySnapshot => {
-            console.log(querySnapshot);
-            const changes = querySnapshot.docChanges();
-
-            const updatedIdeas = changes.filter(c => c.type === "modified")
-                .map(c => Object.assign({ key: c.doc.id }, c.doc.data()));
-            const newIdeas = changes.filter(c => c.type === "added")
-                .map(c => Object.assign({ key: c.doc.id }, c.doc.data()));
-            // .map(c => {
-            //     // select a random dummy image
-            //     const image = null;
-            //     if (imageMap.length == 0) {
-            //         imageMap = imageMapTemp.slice();
-            //         imageMapTemp = [];
-            //     }
-
-            //     imageMapTemp.push(imageMap.pop()!);
-
-            //     const imageLoadPromise = storageRef.child('demo/' + imageMapTemp[imageMapTemp.length - 1] + '.jpg').getDownloadURL();
-            //     // end select random dummy image
-
-            //     const idea = c.doc.data() as IPeristedIdea;
-            //     const ideaEvents = {
-            //         onVoteUp: (key: string) => onVoteUpIdea(key),
-            //         onDelete: (key: string) => onDeleteIdea(key)
-            //     }
-            //     return Object.assign(idea, { key: idea.id, imageLoad: imageLoadPromise, events: ideaEvents }) as IIdeaCardModel;
-            // });
-
-            if (newIdeas.length) {
-                if (!store) {
-                    // create store with initial state
-                    store = createStore(ideas, {ideas: newIdeas}, applyMiddleware(firestoreSync, logger) );
-                    ReactDOM.render(
-                        <Provider store={store}>
-                            <IdeaCardCollection />
-                        </Provider>,
-                        ideaGridEl);
-                }
-                else {
-                    store.dispatch(addIdeas(newIdeas as IIdeaCardModel[]));
-                }
-            }
-
-            if (updatedIdeas.length) {
-                for (let idea of updatedIdeas) {
-                    store.dispatch(updateIdea(idea as IIdeaCardModel));
-                }
-            }
-        });
+    // todo: no need to pass initial state if it is empty
+    store = createStore(ideas, { ideas: [] }, applyMiddleware(firestoreSync, logger));
+    ReactDOM.render(
+        <Provider store={store}>
+           <IdeaCardCollection/>
+        </Provider>,
+        ideaGridEl);
 
     ideasPanel = new Panel<void>(document.getElementById("ideas") as HTMLElement, false);
     ideasPanel.openAsync();
@@ -240,12 +192,6 @@ function triggerLogout() {
     });
 }
 
-
-// function onDeleteIdea(key: string) {
-//     console.log("begin delete idea: " + key);
-//     deleteIdeaAsync(key);
-// }
-
 function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
     return new Promise((resolve, reject) => {
         const ref = dbIdeasRef.doc();
@@ -269,16 +215,16 @@ function submitIdeaAsync(idea: IIdea): Promise<IPeristedIdea> {
     });
 }
 
-const showSnackbarMessageAsync = (message: string, action: string) => {
+const showSnackbarMessageAsync = (message: string, actionText: string) => {
     return new Promise((resolve, reject) => {
         // show snackbar
 
         if (snackbarContainer) {
             const data = {
-                message: message,
-                timeout: 4000,
+                message,
+                timeout: 3500,
                 actionHandler: resolve,
-                actionText: action
+                actionText
             };
             (snackbarContainer as any).MaterialSnackbar.showSnackbar(data);
         }

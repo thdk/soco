@@ -1,4 +1,4 @@
-import { Panel } from "../panel";
+import { Panel } from "./panel";
 
 import * as firebase from 'firebase/app'
 import 'firebaseui';

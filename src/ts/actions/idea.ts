@@ -5,7 +5,15 @@ export enum IdeaActionType {
     ADD_IDEA,
     ADD_IDEAS,
     DELETE_IDEA,
-    VOTE_ON_IDEA
+    VOTE_ON_IDEA,
+    FETCH_IDEAS_BEGIN,
+    FETCH_IDEAS_SUCCESS,
+    FETCH_IDEAS_FAILURE
+}
+
+export interface IIdeaActionType {
+    type: IdeaActionType,
+    payload?: IIdeaCardModel | IIdeaCardModel[];
 }
 
 export interface IUpdateIdeaAction {
@@ -30,10 +38,10 @@ export interface IDeleteIdeaAction {
 
 export interface IVoteOnIdeaAction {
     type: IdeaActionType.VOTE_ON_IDEA;
-    payload: {id: string, up: boolean};
+    payload: { id: string, up: boolean };
 }
 
-export type Action = IDeleteIdeaAction | IUpdateIdeaAction | IAddIdeasAction | IAddIdeaAction | IVoteOnIdeaAction;
+export type Action = IIdeaActionType | IDeleteIdeaAction | IUpdateIdeaAction | IAddIdeasAction | IAddIdeaAction | IVoteOnIdeaAction;
 
 export const updateIdea = (idea: IIdeaCardModel): IUpdateIdeaAction => {
     return {
@@ -59,6 +67,6 @@ export const addIdeas = (ideas: IIdeaCardModel[]): IAddIdeasAction => {
 export const deleteIdea = (id: string): IDeleteIdeaAction => {
     return {
         type: IdeaActionType.DELETE_IDEA,
-        payload: {id}
+        payload: { id }
     }
 }

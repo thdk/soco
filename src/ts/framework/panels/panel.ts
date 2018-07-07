@@ -1,4 +1,4 @@
-import IPanel from '../interfaces/IPanel';
+import { IPanel } from ".";
 
 export class Panel<T> implements IPanel<T>{
     protected readonly containerEl: HTMLElement;

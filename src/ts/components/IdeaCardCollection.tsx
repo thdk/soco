@@ -1,22 +1,22 @@
 import * as React from "react";
-import { connect } from "react-redux";
-import { IPeristedIdea, IIdea } from "../interfaces/IIdea";
-import { SFC } from "react";
-import IAppState from "../interfaces/IAppState";
-import { Dispatch } from "redux";
-import { deleteIdea, updateIdea, voteOnIdea } from "../actions/idea";
-import { SFCIdeaCardProps, SFCIdeaCardConnected as IdeaCard } from "./IdeaCard";
+import { IIdeaCardModel } from "../interfaces/IIdea";
+import { SFCIdeaCardConnected as IdeaCard } from "./IdeaCard";
 
+export class IdeaCardGrid extends React.Component<{ ideaIds: string[], fetchIdeas: any }> {
+    public componentDidMount() {
+        this.props.fetchIdeas();
+    }
 
-export const IdeaCardGrid = (props: { ideaIds: string[] }) => {
-    const cards = props.ideaIds.map(id => {        
-        return <IdeaCard id={id} key={id}/>
-    });
-    return (
-        <div id="idea-grid">
-            {cards}
-        </div>
-    );
+    public render() {
+        const cards = this.props.ideaIds.map(id => {
+            return <IdeaCard id={id} key={id} />
+        });
+        return (
+            <div id="idea-grid">
+                {cards}
+            </div>
+        );
+    }
 }
 
 
