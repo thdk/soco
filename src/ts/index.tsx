@@ -13,35 +13,13 @@ import { IdeaCardCollection } from './containers/IdeaCardGrid'
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
-import { createStore, Store, applyMiddleware } from "redux";
+import { createStore,  applyMiddleware } from "redux";
 
-import IAppState from './interfaces/IAppState';
-import { IdeaActionType, Action as IdeaAction, updateIdea, deleteIdea, addIdeas } from './actions/idea';
-import { ideaReducer, ideas } from './reducers/ideaReducer';
+import { ideas } from './reducers/ideaReducer';
 import { Provider } from 'react-redux';
 import { firestoreSync, logger, firebaseApp, dbIdeasRef, deleteIdeaAsync } from './middleware/firestore';
 import { SubmitIdeaPanel, IPanel, Panel, LoginPanel } from './framework/panels';
 import { IdeaCardGrid } from './components/IdeaCardCollection';
-
-let imageMapTemp: string[] = [];
-let imageMap = [
-    "bbq",
-    "bikerepair",
-    "brokenbike",
-    "buren",
-    "cat",
-    "communicatie",
-    "drink",
-    "games",
-    "herfstbladeren",
-    "kubb",
-    "speeltuin",
-    "renovatie",
-    "tuinieren",
-    "yoga"
-];
-
-const pagesize = 10;
 
 let ideasPanel: IPanel<void>;
 let newIdeaPanel: SubmitIdeaPanel;
@@ -53,9 +31,6 @@ let snackbarContainer: HTMLElement | null;
 
 declare const firebaseui: any;
 
-// TODO: move this to the Provider
-let store: Store;
-
 window.onload = function (e) {
     layoutEl = document.querySelector('.mdl-layout') as HTMLElement;
     ideaGridEl = document.getElementById("ideas") as HTMLElement;
@@ -63,7 +38,7 @@ window.onload = function (e) {
         return;
 
     // todo: no need to pass initial state if it is empty
-    store = createStore(ideas, { ideas: [] }, applyMiddleware(firestoreSync, logger));
+    const store = createStore(ideas, { ideas: [] }, applyMiddleware(firestoreSync, logger));
     ReactDOM.render(
         <Provider store={store}>
            <IdeaCardCollection/>

@@ -3,6 +3,24 @@ import { IPeristedIdea, IIdeaCardModel } from "../interfaces/IIdea";
 import { dbIdeasRef } from "../middleware/firestore";
 import { addIdeas, IdeaActionType } from "./idea";
 
+// let imageMapTemp: string[] = [];
+// let imageMap = [
+//     "bbq",
+//     "bikerepair",
+//     "brokenbike",
+//     "buren",
+//     "cat",
+//     "communicatie",
+//     "drink",
+//     "games",
+//     "herfstbladeren",
+//     "kubb",
+//     "speeltuin",
+//     "renovatie",
+//     "tuinieren",
+//     "yoga"
+// ];
+
 const fetchIdeasBegin = () => {
     return {
         type: IdeaActionType.FETCH_IDEAS_BEGIN
