@@ -1,6 +1,3 @@
-import { Store, Dispatch } from "redux";
-import { Action, IdeaActionType } from "../actions/idea";
-
 import { config } from '../../../config';
 
 import * as firebase from 'firebase/app';
@@ -8,6 +5,7 @@ import 'firebase/firestore';
 
 import { IPeristedIdea } from "../interfaces/IIdea";
 import { showSnackbarMessage } from "..";
+import { IdeaActionType } from '../actions/idea';
 
 export const firebaseApp = firebase.initializeApp({
     apiKey: config.firebase.apiKey,
@@ -18,8 +16,6 @@ export const firebaseApp = firebase.initializeApp({
 
 // Initialize Cloud Firestore through Firebase
 const db = firebase.firestore();
-const storage = firebase.storage();
-const storageRef = storage.ref();
 
 const settings = { timestampsInSnapshots: true };
 db.settings(settings);

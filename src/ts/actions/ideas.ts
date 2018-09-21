@@ -1,7 +1,7 @@
 import { Dispatch } from "redux";
 import { IPeristedIdea, IIdeaCardModel } from "../interfaces/IIdea";
 import { dbIdeasRef } from "../middleware/firestore";
-import { addIdeas, IdeaActionType } from "./idea";
+import { IdeaActionType } from "./idea";
 
 // let imageMapTemp: string[] = [];
 // let imageMap = [

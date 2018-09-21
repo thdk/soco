@@ -1,10 +1,10 @@
 import * as React from "react";
+
 import { connect } from "react-redux";
-import { IPeristedIdea, IIdea, IIdeaCardModel } from "../interfaces/IIdea";
 import { SFC } from "react";
 import IAppState from "../interfaces/IAppState";
 import { Dispatch } from "redux";
-import { deleteIdea, updateIdea, voteOnIdea, IdeaActionType, Action } from "../actions/idea";
+import { deleteIdea, voteOnIdea, Action } from "../actions/idea";
 
 export interface SFCIdeaCardProps {
     author: string;

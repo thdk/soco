@@ -1,12 +1,10 @@
-import { config } from '../../config';
-
 import * as firebase from 'firebase/app';
 import 'firebaseui';
 import 'firebase/auth';
 import 'firebase/storage';
 
 import utils from './framework/utils'
-import { IIdea, IPeristedIdea, IIdeaCardModel } from './interfaces/IIdea'
+import { IIdea, IPeristedIdea } from './interfaces/IIdea'
 
 import { IdeaCardCollection } from './containers/IdeaCardGrid'
 
@@ -19,7 +17,6 @@ import { ideas } from './reducers/ideaReducer';
 import { Provider } from 'react-redux';
 import { firestoreSync, logger, firebaseApp, dbIdeasRef, deleteIdeaAsync } from './middleware/firestore';
 import { SubmitIdeaPanel, IPanel, Panel, LoginPanel } from './framework/panels';
-import { IdeaCardGrid } from './components/IdeaCardCollection';
 
 let ideasPanel: IPanel<void>;
 let newIdeaPanel: SubmitIdeaPanel;
@@ -50,7 +47,7 @@ window.onload = function (e) {
 
     newIdeaPanel = new SubmitIdeaPanel(document.getElementById("newidea") as HTMLElement, firebaseApp);
 
-    loginPanel = new LoginPanel(document.getElementById("authentication") as HTMLElement, new firebaseui.auth.AuthUI(firebase.auth()), firebaseApp);
+    loginPanel = new LoginPanel(document.getElementById("authentication") as HTMLElement, new firebaseui.auth.AuthUI(firebase.auth()));
 
     snackbarContainer = document.querySelector('#snackbar');
 

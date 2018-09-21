@@ -1,5 +1,4 @@
 import * as React from "react";
-import { IIdeaCardModel } from "../interfaces/IIdea";
 import { SFCIdeaCardConnected as IdeaCard } from "./IdeaCard";
 
 export class IdeaCardGrid extends React.Component<{ ideaIds: string[], fetchIdeas: any }> {

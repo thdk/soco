@@ -6,11 +6,9 @@ declare const firebaseui: any;
 
 export class LoginPanel extends Panel<any> {
     private readonly firebaseUI: any;
-    private readonly firebaseApp: any;
 
-    constructor(containerEl: HTMLElement, firebaseUI: any, firebaseApp: firebase.app.App) {
+    constructor(containerEl: HTMLElement, firebaseUI: any) {
         super(containerEl);
-        this.firebaseApp = firebaseApp;
         this.firebaseUI = firebaseUI;
     }
 

@@ -8,7 +8,7 @@ export class SubmitIdeaPanel extends Panel<IIdea | undefined> {
     private readonly firebaseApp: any;
 
     private readonly titleEl: HTMLInputElement;
-    private readonly authorEl: HTMLInputElement;
+    // private readonly authorEl: HTMLInputElement;
     private readonly descriptionEl: HTMLTextAreaElement;
 
     constructor(containerEl: HTMLElement, firebaseApp: firebase.app.App) {
@@ -16,7 +16,7 @@ export class SubmitIdeaPanel extends Panel<IIdea | undefined> {
         this.firebaseApp = firebaseApp;
 
         this.titleEl = this.containerEl.querySelector('input.title') as HTMLInputElement;
-        this.authorEl = this.containerEl.querySelector('input.author') as HTMLInputElement;
+        // this.authorEl = this.containerEl.querySelector('input.author') as HTMLInputElement;
         this.descriptionEl = this.containerEl.querySelector('textarea.description') as HTMLTextAreaElement;
     }
 
